@@ -1,0 +1,255 @@
+'use client'
+
+import { useState } from 'react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { formatTHB, formatDate, PAYMENT_METHODS, ROOMS } from '@/types'
+import type { Guest } from '@/types'
+import PageHeader from '@/components/PageHeader'
+import Modal from '@/components/Modal'
+
+const EMPTY: Partial<Guest> = {
+  room: 1, check_in: '', check_out: '', guest_name: '', guest_count: 1,
+  amount_thb_day: null, amount_thb_stay: null, paid: '', payment: 0,
+  invoice: '', notes: '', email: '', phone: '', tm30: false,
+}
+
+export default function GuestsClient({ initialGuests }: { initialGuests: Guest[] }) {
+  const [guests, setGuests] = useState<Guest[]>(initialGuests)
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<Guest | null>(null)
+  const [form, setForm] = useState<Partial<Guest>>(EMPTY)
+  const [saving, setSaving] = useState(false)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 50
+  const visible = guests.slice(0, page * PAGE_SIZE)
+
+  const openNew = () => { setEditing(null); setForm(EMPTY); setOpen(true) }
+  const openEdit = (g: Guest) => { setEditing(g); setForm(g); setOpen(true) }
+
+  const nights = form.check_in && form.check_out
+    ? Math.max(0, Math.round((new Date(form.check_out).getTime() - new Date(form.check_in).getTime()) / 86400000))
+    : 0
+
+  const computedStay = form.amount_thb_day && nights ? form.amount_thb_day * nights : form.amount_thb_stay ?? 0
+  const balance = (form.amount_thb_stay ?? computedStay) - (form.payment ?? 0)
+
+  async function save() {
+    setSaving(true)
+    const payload = {
+      ...form,
+      amount_thb_stay: form.amount_thb_stay ?? (form.amount_thb_day && nights ? form.amount_thb_day * nights : null),
+    }
+    if (editing) {
+      const { data } = await supabase.from('guests').update(payload).eq('id', editing.id).select().single()
+      if (data) setGuests(prev => prev.map(g => g.id === editing.id ? data : g))
+    } else {
+      const { data } = await supabase.from('guests').insert(payload).select().single()
+      if (data) setGuests(prev => [data, ...prev])
+    }
+    setSaving(false)
+    setOpen(false)
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Delete this guest record?')) return
+    await supabase.from('guests').delete().eq('id', id)
+    setGuests(prev => prev.filter(g => g.id !== id))
+  }
+
+  const today = new Date()
+  const statusOf = (g: Guest) => {
+    const ci = new Date(g.check_in), co = new Date(g.check_out)
+    if (co < today) return { label: 'Checked Out', cls: 'bg-slate-100 text-slate-500' }
+    if (ci <= today) return { label: 'In-House', cls: 'bg-green-100 text-green-700' }
+    return { label: 'Upcoming', cls: 'bg-blue-100 text-blue-700' }
+  }
+
+  return (
+    <>
+      <PageHeader
+        title="Guests"
+        subtitle={`${guests.length} bookings`}
+        action={
+          <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+            <Plus size={16} /> Add Guest
+          </button>
+        }
+      />
+
+      {/* Mobile card list */}
+      <div className="sm:hidden space-y-3">
+        {visible.map(g => {
+          const ns = Math.max(0, Math.round((new Date(g.check_out).getTime() - new Date(g.check_in).getTime()) / 86400000))
+          const stay = g.amount_thb_stay ?? (g.amount_thb_day ? g.amount_thb_day * ns : 0)
+          const bal = stay - (g.payment ?? 0)
+          const { label, cls } = statusOf(g)
+          return (
+            <div key={g.id} className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="font-semibold text-slate-900">{g.guest_name}</p>
+                  <p className="text-xs text-slate-500">Room #{g.room} · {ns} nights</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>
+                  <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>
+                </div>
+              </div>
+              <div className="text-xs text-slate-500 mb-2">{formatDate(g.check_in)} → {formatDate(g.check_out)}</div>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{label}</span>
+                <div className="text-right">
+                  <p className="text-xs text-slate-400">Total {formatTHB(stay)}</p>
+                  <p className={`text-sm font-bold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{bal > 0 ? `Owes ${formatTHB(bal)}` : 'Paid'}</p>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[900px]">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">Room</th>
+                <th className="text-left px-4 py-3 font-medium">Guest</th>
+                <th className="text-left px-4 py-3 font-medium">Check-In</th>
+                <th className="text-left px-4 py-3 font-medium">Check-Out</th>
+                <th className="text-right px-4 py-3 font-medium">Nights</th>
+                <th className="text-right px-4 py-3 font-medium">Stay Total</th>
+                <th className="text-right px-4 py-3 font-medium">Paid</th>
+                <th className="text-right px-4 py-3 font-medium">Balance</th>
+                <th className="text-left px-4 py-3 font-medium">Status</th>
+                <th className="text-center px-4 py-3 font-medium">TM30</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {visible.map(g => {
+                const ns = Math.max(0, Math.round((new Date(g.check_out).getTime() - new Date(g.check_in).getTime()) / 86400000))
+                const stay = g.amount_thb_stay ?? (g.amount_thb_day ? g.amount_thb_day * ns : 0)
+                const bal = stay - (g.payment ?? 0)
+                const { label, cls } = statusOf(g)
+                return (
+                  <tr key={g.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-semibold">#{g.room}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{g.guest_name}</p>
+                      {g.email && <p className="text-xs text-slate-400">{g.email}</p>}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{formatDate(g.check_in)}</td>
+                    <td className="px-4 py-3 text-slate-600">{formatDate(g.check_out)}</td>
+                    <td className="px-4 py-3 text-right">{ns}</td>
+                    <td className="px-4 py-3 text-right font-medium">{formatTHB(stay)}</td>
+                    <td className="px-4 py-3 text-right text-green-600">{formatTHB(g.payment)}</td>
+                    <td className={`px-4 py-3 text-right font-semibold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{formatTHB(bal)}</td>
+                    <td className="px-4 py-3"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{label}</span></td>
+                    <td className="px-4 py-3 text-center">{g.tm30 ? '✅' : '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
+                        <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {visible.length < guests.length && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setPage(p => p + 1)}
+            className="px-6 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900"
+          >
+            Load more ({guests.length - visible.length} remaining)
+          </button>
+        </div>
+      )}
+
+      {open && (
+        <Modal title={editing ? 'Edit Guest' : 'Add Guest'} onClose={() => setOpen(false)}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Room</label>
+              <select className="input" value={form.room} onChange={e => setForm(f => ({ ...f, room: +e.target.value }))}>
+                {ROOMS.map(r => <option key={r} value={r}>Room {r}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Guest Name</label>
+              <input className="input" value={form.guest_name ?? ''} onChange={e => setForm(f => ({ ...f, guest_name: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Check-In</label>
+              <input type="date" className="input" value={form.check_in ?? ''} onChange={e => setForm(f => ({ ...f, check_in: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Check-Out</label>
+              <input type="date" className="input" value={form.check_out ?? ''} onChange={e => setForm(f => ({ ...f, check_out: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Amount/Day (THB)</label>
+              <input type="number" className="input" value={form.amount_thb_day ?? ''} onChange={e => setForm(f => ({ ...f, amount_thb_day: +e.target.value || null }))} />
+            </div>
+            <div>
+              <label className="label">Total Stay (THB) {nights > 0 && <span className="text-slate-400 font-normal">({nights} nights)</span>}</label>
+              <input type="number" className="input" value={form.amount_thb_stay ?? ''} onChange={e => setForm(f => ({ ...f, amount_thb_stay: +e.target.value || null }))} />
+            </div>
+            <div>
+              <label className="label">Payment Method</label>
+              <select className="input" value={form.paid ?? ''} onChange={e => setForm(f => ({ ...f, paid: e.target.value }))}>
+                <option value="">—</option>
+                {PAYMENT_METHODS.map(m => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Amount Paid (THB)</label>
+              <input type="number" className="input" value={form.payment ?? ''} onChange={e => setForm(f => ({ ...f, payment: +e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Email</label>
+              <input type="email" className="input" value={form.email ?? ''} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Phone</label>
+              <input className="input" value={form.phone ?? ''} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">Notes</label>
+              <textarea className="input" rows={2} value={form.notes ?? ''} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="tm30" checked={form.tm30 ?? false} onChange={e => setForm(f => ({ ...f, tm30: e.target.checked }))} />
+              <label htmlFor="tm30" className="text-sm font-medium text-slate-700">TM30 Filed</label>
+            </div>
+            {balance > 0 && (
+              <div className="col-span-2 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                Balance due: <strong>{formatTHB(balance)}</strong>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900">Cancel</button>
+            <button onClick={save} disabled={saving} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      <style jsx global>{`
+        .label { display: block; font-size: 0.75rem; font-weight: 500; color: #64748b; margin-bottom: 4px; }
+        .input { width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 0.875rem; outline: none; }
+        .input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+      `}</style>
+    </>
+  )
+}

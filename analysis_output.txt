@@ -1,0 +1,465 @@
+================================================================================
+SHEET NAMES
+================================================================================
+  - Status_of_Account
+  - Founding
+  - Revenue
+  - Expenses
+  - Expenses Shared with Legal
+  - Shareholder Work
+  - To Do
+  - Guests
+  - Guest Occupancy
+  - Budget - Dashboard
+  - Budget - Revenue
+  - Budget - Expenses
+  - Budget - Rent
+
+================================================================================
+SHEET: Status_of_Account
+================================================================================
+  Dimensions: A1:P33
+  Max Row: 33, Max Col: 16
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Status_of_Account'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 77
+  Data types: {'text': 29, 'formula': 35, 'date': 6, 'number': 7}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Status_of_Account' [computed='Status_of_Account']
+  Row 3: E3='Total' [computed='Total'] | F3='To reconcile' [computed='To reconcile']
+  Row 4: A4='Expenses' [computed='Expenses'] | B4='=Expenses!F2' [computed=-8487170.3] | C4='=B4*0.027' [computed=-229153.59810000003] | E4='=B4+B5+B6' [computed=120571.83999999892] | F4='=E4-B8-B9-B10' [computed=-44250.45000000109] | G4=datetime.datetime(2026, 3, 30, 0, 0) [computed=datetime.datetime(2026, 3, 30, 0, 0)] | H4='To check' [computed='To check']
+  Row 5: A5='Founding Shareholders' [computed='Founding Shareholders'] | B5='=B13+B14+B15+B16' [computed=8378751.14] | C5='=B5*0.027' [computed=226226.28078] | E5=datetime.datetime(2026, 3, 30, 0, 0) [computed=datetime.datetime(2026, 3, 30, 0, 0)] | F5='Checked' [computed='Checked']
+  Row 6: A6='Revenue' [computed='Revenue'] | B6='=Revenue!D4+Revenue!D5+Revenue!D6+Revenue!D7' [computed=228991] | C6='=B6*0.027' [computed=6182.757] | E6=datetime.datetime(2026, 3, 30, 0, 0) [computed=datetime.datetime(2026, 3, 30, 0, 0)] | F6='Checked' [computed='Checked']
+  Row 8: A8='Bank' [computed='Bank'] | B8=109569.29000000001 [computed=109569.29000000001] | C8='=B8*0.027' [computed=2958.3708300000003] | E8=datetime.datetime(2026, 3, 30, 0, 0) [computed=datetime.datetime(2026, 3, 30, 0, 0)] | F8='Checked' [computed='Checked']
+  Row 9: A9='Nicolo' [computed='Nicolo'] | B9=45000 [computed=45000] | C9='=B9*0.027' [computed=1215] | E9=datetime.datetime(2026, 3, 30, 0, 0) [computed=datetime.datetime(2026, 3, 30, 0, 0)] | F9='Checked' [computed='Checked']
+  Row 10: A10='No Invoice/Receipt' [computed='No Invoice/Receipt'] | B10=10253 [computed=10253] | C10='=B10*0.027' [computed=276.831] | E10=datetime.datetime(2026, 3, 30, 0, 0) [computed=datetime.datetime(2026, 3, 30, 0, 0)] | F10='Checked' [computed='Checked']
+
+  --- FORMULAS (35 total) ---
+    B4: =Expenses!F2
+    C4: =B4*0.027
+    E4: =B4+B5+B6
+    F4: =E4-B8-B9-B10
+    B5: =B13+B14+B15+B16
+    B6: =Revenue!D4+Revenue!D5+Revenue!D6+Revenue!D7
+    B13: =Founding!C2
+    E13: =B5*D13
+    F13: =B13-E13
+    H13: =F13/E13
+
+  --- CROSS-SHEET REFERENCES ---
+  References sheet '=Expenses':
+    B4: =Expenses!F2
+  References sheet '=Revenue':
+    B6: =Revenue!D4+Revenue!D5+Revenue!D6+Revenue!D7
+  References sheet '+Revenue':
+    B6: =Revenue!D4+Revenue!D5+Revenue!D6+Revenue!D7
+    B6: =Revenue!D4+Revenue!D5+Revenue!D6+Revenue!D7
+    B6: =Revenue!D4+Revenue!D5+Revenue!D6+Revenue!D7
+  References sheet '=Founding':
+    B13: =Founding!C2
+    B14: =Founding!D2
+    B15: =Founding!E2
+    B16: =Founding!F2
+
+================================================================================
+SHEET: Founding
+================================================================================
+  Dimensions: A1:K224
+  Max Row: 224, Max Col: 11
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Founding'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 1525
+  Data types: {'text': 1070, 'formula': 20, 'date': 219, 'number': 216}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Founding' [computed='Founding']
+  Row 2: C2='=SUM(C5:C234)' [computed=3092081.05] | D2='=SUM(D5:D234)' [computed=1810968.2999999998] | E2='=SUM(E5:E234)' [computed=1731441.29] | F2='=SUM(F5:F234)' [computed=1744260.5] | G2='=SUM(C2:F2)' [computed=8378751.14]
+  Row 4: A4='Date' [computed='Date'] | B4='Method' [computed='Method'] | C4='Lorenzo PAGNAN ' [computed='Lorenzo PAGNAN '] | D4='Stella MAROZZI ' [computed='Stella MAROZZI '] | E4='Bruce MIFSUD ' [computed='Bruce MIFSUD '] | F4='Hanna PARSONSON ' [computed='Hanna PARSONSON '] | G4='Notes' [computed='Notes']
+  Row 5: A5=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | B5='Direct Payment' [computed='Direct Payment'] | C5='-' [computed='-'] | D5=125000 [computed=125000] | E5='-' [computed='-'] | F5='-' [computed='-'] | G5='Broker fee 50%' [computed='Broker fee 50%']
+  Row 6: A6=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | B6='Direct Payment' [computed='Direct Payment'] | C6=250000 [computed=250000] | D6=250000 [computed=250000] | E6='-' [computed='-'] | F6='-' [computed='-'] | G6='Deposit' [computed='Deposit']
+  Row 7: A7=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | B7='Direct Payment' [computed='Direct Payment'] | C7=105260 [computed=105260] | D7='-' [computed='-'] | E7='-' [computed='-'] | F7='-' [computed='-'] | G7='MD Legal company opening' [computed='MD Legal company opening']
+  Row 8: A8=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | B8='Direct Payment' [computed='Direct Payment'] | C8=16050 [computed=16050] | D8='-' [computed='-'] | E8='-' [computed='-'] | F8='-' [computed='-'] | G8='MD Legal contract review' [computed='MD Legal contract review']
+  Row 9: A9=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | B9='Direct Payment' [computed='Direct Payment'] | C9=16050 [computed=16050] | D9='-' [computed='-'] | E9='-' [computed='-'] | F9='-' [computed='-'] | G9='MD Legal contract review' [computed='MD Legal contract review']
+  Row 10: A10=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | B10='Direct Payment' [computed='Direct Payment'] | C10=6420 [computed=6420] | D10='-' [computed='-'] | E10='-' [computed='-'] | F10='-' [computed='-'] | G10='MD Legal consultancy fee' [computed='MD Legal consultancy fee']
+
+  --- FORMULAS (20 total) ---
+    C2: =SUM(C5:C234)
+    C54: ='Shareholder Work'!D6+'Shareholder Work'!D7+'Shareholder Work'!D8+'Shareholder Work'!D9+'Shareholder Work'!D10+'Shareholder Work'!D11+'Shareholder Work'!D12+'Shareholder Work'!D13+'Shareholder Work'!D14+'Shareholder Work'!D15+'Shareholder Work'!D16+'Shareholder Work'!D17+'Shareholder Work'!D18+'Shareholder Work'!D58+'Shareholder Work'!D59+'Shareholder Work'!D64+'Shareholder Work'!D65+'Shareholder Work'!D70+'Shareholder Work'!D84+'Shareholder Work'!D90+'Shareholder Work'!D96
+    D54: ='Shareholder Work'!F6+'Shareholder Work'!F7+'Shareholder Work'!F8+'Shareholder Work'!F9+'Shareholder Work'!F10+'Shareholder Work'!F11+'Shareholder Work'!F12+'Shareholder Work'!F13+'Shareholder Work'!F14+'Shareholder Work'!F32+'Shareholder Work'!F33+'Shareholder Work'!F35+'Shareholder Work'!F40
+    C68: ='Shareholder Work'!D19+'Shareholder Work'!D71
+    C84: ='Shareholder Work'!D20
+    C169: ='Shareholder Work'!D24+'Shareholder Work'!D50+'Shareholder Work'!D76+'Shareholder Work'!D102
+
+  --- CROSS-SHEET REFERENCES ---
+  References sheet 'Shareholder Work':
+    C54: ='Shareholder Work'!D6+'Shareholder Work'!D7+'Shareholder Work'!D8+'Shareholder Work'!D9+'Shareholder Work'!D10+'Shareholder Work'!D11+'Shareholder Work'!D12+'Shareholder Work'!D13+'Shareholder Work'!D14+'Shareholder Work'!D15+'Shareholder Work'!D16+'Shareholder Work'!D17+'Shareholder Work'!D18+'Shareholder Work'!D58+'Shareholder Work'!D59+'Shareholder Work'!D64+'Shareholder Work'!D65+'Shareholder Work'!D70+'Shareholder Work'!D84+'Shareholder Work'!D90+'Shareholder Work'!D96
+    C54: ='Shareholder Work'!D6+'Shareholder Work'!D7+'Shareholder Work'!D8+'Shareholder Work'!D9+'Shareholder Work'!D10+'Shareholder Work'!D11+'Shareholder Work'!D12+'Shareholder Work'!D13+'Shareholder Work'!D14+'Shareholder Work'!D15+'Shareholder Work'!D16+'Shareholder Work'!D17+'Shareholder Work'!D18+'Shareholder Work'!D58+'Shareholder Work'!D59+'Shareholder Work'!D64+'Shareholder Work'!D65+'Shareholder Work'!D70+'Shareholder Work'!D84+'Shareholder Work'!D90+'Shareholder Work'!D96
+    C54: ='Shareholder Work'!D6+'Shareholder Work'!D7+'Shareholder Work'!D8+'Shareholder Work'!D9+'Shareholder Work'!D10+'Shareholder Work'!D11+'Shareholder Work'!D12+'Shareholder Work'!D13+'Shareholder Work'!D14+'Shareholder Work'!D15+'Shareholder Work'!D16+'Shareholder Work'!D17+'Shareholder Work'!D18+'Shareholder Work'!D58+'Shareholder Work'!D59+'Shareholder Work'!D64+'Shareholder Work'!D65+'Shareholder Work'!D70+'Shareholder Work'!D84+'Shareholder Work'!D90+'Shareholder Work'!D96
+    C54: ='Shareholder Work'!D6+'Shareholder Work'!D7+'Shareholder Work'!D8+'Shareholder Work'!D9+'Shareholder Work'!D10+'Shareholder Work'!D11+'Shareholder Work'!D12+'Shareholder Work'!D13+'Shareholder Work'!D14+'Shareholder Work'!D15+'Shareholder Work'!D16+'Shareholder Work'!D17+'Shareholder Work'!D18+'Shareholder Work'!D58+'Shareholder Work'!D59+'Shareholder Work'!D64+'Shareholder Work'!D65+'Shareholder Work'!D70+'Shareholder Work'!D84+'Shareholder Work'!D90+'Shareholder Work'!D96
+    C54: ='Shareholder Work'!D6+'Shareholder Work'!D7+'Shareholder Work'!D8+'Shareholder Work'!D9+'Shareholder Work'!D10+'Shareholder Work'!D11+'Shareholder Work'!D12+'Shareholder Work'!D13+'Shareholder Work'!D14+'Shareholder Work'!D15+'Shareholder Work'!D16+'Shareholder Work'!D17+'Shareholder Work'!D18+'Shareholder Work'!D58+'Shareholder Work'!D59+'Shareholder Work'!D64+'Shareholder Work'!D65+'Shareholder Work'!D70+'Shareholder Work'!D84+'Shareholder Work'!D90+'Shareholder Work'!D96
+    ... and 50 more
+
+================================================================================
+SHEET: Revenue
+================================================================================
+  Dimensions: A1:L7
+  Max Row: 7, Max Col: 12
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Revenue'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 21
+  Data types: {'text': 13, 'date': 4, 'number': 2, 'formula': 2}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Revenue' [computed='Revenue']
+  Row 3: A3='Date' [computed='Date'] | B3='Type' [computed='Type'] | C3='Supplier' [computed='Supplier'] | D3='Amount THB' [computed='Amount THB']
+  Row 4: A4=datetime.datetime(2025, 8, 30, 0, 0) [computed=datetime.datetime(2025, 8, 30, 0, 0)] | B4='August Rooms' [computed='August Rooms'] | C4='Aoy' [computed='Aoy'] | D4=96774 [computed=96774]
+  Row 5: A5=datetime.datetime(2025, 9, 30, 0, 0) [computed=datetime.datetime(2025, 9, 30, 0, 0)] | B5='September Rooms' [computed='September Rooms'] | C5='Aoy' [computed='Aoy'] | D5=69417 [computed=69417]
+  Row 6: A6=datetime.datetime(2026, 3, 31, 0, 0) [computed=datetime.datetime(2026, 3, 31, 0, 0)] | B6='March Rooms' [computed='March Rooms'] | C6='Nicolo' [computed='Nicolo'] | D6='=Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10' [computed=60400]
+  Row 7: A7=datetime.datetime(2026, 4, 30, 0, 0) [computed=datetime.datetime(2026, 4, 30, 0, 0)] | B7='April Rooms' [computed='April Rooms'] | C7='Nicolo' [computed='Nicolo'] | D7='=Guests!K11+Guests!K12' [computed=2400]
+
+  --- FORMULAS (2 total) ---
+    D6: =Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10
+    D7: =Guests!K11+Guests!K12
+
+  --- CROSS-SHEET REFERENCES ---
+  References sheet '=Guests':
+    D6: =Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10
+    D7: =Guests!K11+Guests!K12
+  References sheet '+Guests':
+    D6: =Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10
+    D6: =Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10
+    D6: =Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10
+    D6: =Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10
+    D6: =Guests!K4+Guests!K5+Guests!K6+Guests!K7+Guests!K8+Guests!K9+Guests!K10
+    ... and 2 more
+
+================================================================================
+SHEET: Expenses
+================================================================================
+  Dimensions: A1:R560
+  Max Row: 560, Max Col: 18
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Expenses'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 8797
+  Data types: {'text': 6702, 'formula': 6, 'date': 750, 'number': 1339}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Expenses' [computed='Expenses']
+  Row 2: E2='Actual_Expenses' [computed='Actual_Expenses'] | F2='=SUM(K:K)' [computed=-8487170.3]
+  Row 4: A4='Audit ' [computed='Audit '] | B4='Lawyers' [computed='Lawyers'] | C4='Sent' [computed='Sent'] | D4='To verify' [computed='To verify'] | E4='Payment date' [computed='Payment date'] | F4='Internatl Transaction N.' [computed='Internatl Transaction N.'] | G4='Document no.' [computed='Document no.'] | H4='Category' [computed='Category'] | I4='Subcategory' [computed='Subcategory'] | J4='Supplier' [computed='Supplier'] | K4='Amount' [computed='Amount'] | L4='Currency' [computed='Currency'] | M4='Method' [computed='Method'] | N4='Paid by' [computed='Paid by'] | O4='Internal Document' [computed='Internal Document'] | P4='Document Page' [computed='Document Page'] | Q4='Type' [computed='Type'] | R4='Description' [computed='Description']
+  Row 5: A5='To check' [computed='To check'] | B5='-' [computed='-'] | C5='-' [computed='-'] | E5=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | F5='Expense 001' [computed='Expense 001'] | G5='No. 001' [computed='No. 001'] | H5='Rent' [computed='Rent'] | I5='Rent' [computed='Rent'] | J5='Aoy' [computed='Aoy'] | K5=-500000 [computed=-500000] | L5='THB' [computed='THB'] | M5='Cash' [computed='Cash'] | N5='Stella' [computed='Stella'] | O5=1 [computed=1] | P5=1 [computed=1] | Q5='Payment' [computed='Payment'] | R5='Stella paid deposit via revolute.Revolute payment and receipt' [computed='Stella paid deposit via revolute.Revolute payment and receipt']
+  Row 6: A6='To check' [computed='To check'] | B6='-' [computed='-'] | C6='-' [computed='-'] | E6=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | F6='Expense 002' [computed='Expense 002'] | G6='-' [computed='-'] | H6='Rent' [computed='Rent'] | I6='Rent' [computed='Rent'] | J6='Broker' [computed='Broker'] | K6=-125000 [computed=-125000] | L6='THB' [computed='THB'] | M6='Cash' [computed='Cash'] | N6='Stella' [computed='Stella'] | O6='-' [computed='-'] | P6='-' [computed='-'] | Q6='-' [computed='-'] | R6='Stella paid broker fee 50% (50% to be paid)' [computed='Stella paid broker fee 50% (50% to be paid)']
+  Row 7: A7='To check' [computed='To check'] | B7='-' [computed='-'] | C7='-' [computed='-'] | E7=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | F7='Expense 003' [computed='Expense 003'] | G7='-' [computed='-'] | H7='Legal' [computed='Legal'] | I7='Company Setup' [computed='Company Setup'] | J7='Sarisa Legal' [computed='Sarisa Legal'] | K7=-80000 [computed=-80000] | L7='THB' [computed='THB'] | M7='Cash' [computed='Cash'] | N7='Stella' [computed='Stella'] | O7='-' [computed='-'] | P7='-' [computed='-'] | Q7='-' [computed='-'] | R7='Stella various payments (incl. first lawyer)' [computed='Stella various payments (incl. first lawyer)']
+  Row 8: A8='To check' [computed='To check'] | B8='-' [computed='-'] | C8='-' [computed='-'] | E8=datetime.datetime(2024, 7, 30, 0, 0) [computed=datetime.datetime(2024, 7, 30, 0, 0)] | F8='Expense 004' [computed='Expense 004'] | G8='-' [computed='-'] | H8='Legal' [computed='Legal'] | I8='Company Setup' [computed='Company Setup'] | J8='Subin' [computed='Subin'] | K8=-200000 [computed=-200000] | L8='THB' [computed='THB'] | M8='Cash' [computed='Cash'] | N8='Stella' [computed='Stella'] | O8='-' [computed='-'] | P8='-' [computed='-'] | Q8='-' [computed='-'] | R8='Stella paid cash land drawings' [computed='Stella paid cash land drawings']
+  Row 9: A9='To check' [computed='To check'] | B9='-' [computed='-'] | C9='-' [computed='-'] | E9=datetime.datetime(2025, 1, 24, 0, 0) [computed=datetime.datetime(2025, 1, 24, 0, 0)] | F9='Expense 005' [computed='Expense 005'] | G9='IVMDG2501103' [computed='IVMDG2501103'] | H9='Legal' [computed='Legal'] | I9='Company Setup' [computed='Company Setup'] | J9='MD Legal' [computed='MD Legal'] | K9=-16050 [computed=-16050] | L9='THB' [computed='THB'] | M9='Bank Transfer' [computed='Bank Transfer'] | N9='Lorenzo' [computed='Lorenzo'] | O9=5 [computed=5] | P9=1 [computed=1] | Q9='Invoice' [computed='Invoice'] | R9='MD Legal contract review' [computed='MD Legal contract review']
+  Row 10: A10='To check' [computed='To check'] | B10='YES' [computed='YES'] | C10=datetime.datetime(2026, 3, 19, 0, 0) [computed=datetime.datetime(2026, 3, 19, 0, 0)] | E10=datetime.datetime(2025, 3, 21, 0, 0) [computed=datetime.datetime(2025, 3, 21, 0, 0)] | F10='Expense 006' [computed='Expense 006'] | G10='IVMIN2503002' [computed='IVMIN2503002'] | H10='Legal' [computed='Legal'] | I10='Company Setup' [computed='Company Setup'] | J10='MD Legal' [computed='MD Legal'] | K10=-105260 [computed=-105260] | L10='THB' [computed='THB'] | M10='Bank Transfer' [computed='Bank Transfer'] | N10='Lorenzo' [computed='Lorenzo'] | O10=6 [computed=6] | P10=1 [computed=1] | Q10='Invoice' [computed='Invoice'] | R10='MD Legal company opening' [computed='MD Legal company opening']
+
+  --- FORMULAS (6 total) ---
+    F2: =SUM(K:K)
+    K53: =-13000+510.96
+    K268: =-22760
+    K285: =-23000
+    K318: =-70600
+    K412: =-46000
+
+================================================================================
+SHEET: Expenses Shared with Legal
+================================================================================
+  Dimensions: A1:P1048293
+  Max Row: 1048293, Max Col: 16
+
+  --- ROW 1 (Headers/First Row) ---
+    Col D (4): 'Expenses Legal'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 3021
+  Data types: {'text': 2158, 'number': 648, 'date': 215}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: D1='Expenses Legal' [computed='Expenses Legal']
+  Row 3: D3='Actual_Expenses' [computed='Actual_Expenses'] | E3=-8229637.3 [computed=-8229637.3]
+  Row 5: A5='Lawyers' [computed='Lawyers'] | B5='Sent' [computed='Sent'] | C5='To verify' [computed='To verify'] | D5='Payment date' [computed='Payment date'] | E5='Internatl Transaction N.' [computed='Internatl Transaction N.'] | F5='Document no.' [computed='Document no.'] | G5='Category' [computed='Category'] | H5='Subcategory' [computed='Subcategory'] | I5='Supplier' [computed='Supplier'] | J5='Amount' [computed='Amount'] | K5='Currency' [computed='Currency'] | L5='Method' [computed='Method'] | M5='Internal Document' [computed='Internal Document'] | N5='Document Page' [computed='Document Page'] | O5='Type' [computed='Type'] | P5='Description' [computed='Description']
+  Row 6: A6='YES' [computed='YES'] | B6='to send' [computed='to send'] | D6=datetime.datetime(2025, 3, 21, 0, 0) [computed=datetime.datetime(2025, 3, 21, 0, 0)] | E6='Expense 006' [computed='Expense 006'] | F6='IVMIN2503002' [computed='IVMIN2503002'] | G6='Legal' [computed='Legal'] | H6='Company Setup' [computed='Company Setup'] | I6='MD Legal' [computed='MD Legal'] | J6=-105260 [computed=-105260] | K6='THB' [computed='THB'] | L6='Bank Transfer' [computed='Bank Transfer'] | M6=6 [computed=6] | N6=1 [computed=1] | O6='Invoice' [computed='Invoice'] | P6='MD Legal company opening' [computed='MD Legal company opening']
+  Row 7: A7='YES' [computed='YES'] | B7='to send' [computed='to send'] | D7=datetime.datetime(2025, 3, 25, 0, 0) [computed=datetime.datetime(2025, 3, 25, 0, 0)] | E7='Expense 007' [computed='Expense 007'] | F7='IVMDG2503109' [computed='IVMDG2503109'] | G7='Legal' [computed='Legal'] | H7='Company Setup' [computed='Company Setup'] | I7='MD Legal' [computed='MD Legal'] | J7=-6420 [computed=-6420] | K7='THB' [computed='THB'] | L7='Bank Transfer' [computed='Bank Transfer'] | M7=7 [computed=7] | N7=1 [computed=1] | O7='Invoice' [computed='Invoice'] | P7='MD Legal consultancy fee' [computed='MD Legal consultancy fee']
+  Row 8: A8='YES' [computed='YES'] | B8='to send' [computed='to send'] | D8=datetime.datetime(2025, 5, 22, 0, 0) [computed=datetime.datetime(2025, 5, 22, 0, 0)] | E8='Expense 008' [computed='Expense 008'] | F8='IVMDG2505030' [computed='IVMDG2505030'] | G8='Legal' [computed='Legal'] | H8='Company Setup' [computed='Company Setup'] | I8='MD Legal' [computed='MD Legal'] | J8=-16050 [computed=-16050] | K8='THB' [computed='THB'] | L8='Bank Transfer' [computed='Bank Transfer'] | M8=8 [computed=8] | N8=1 [computed=1] | O8='Invoice' [computed='Invoice'] | P8='MD Legal contract review' [computed='MD Legal contract review']
+  Row 9: A9='YES' [computed='YES'] | B9='to send' [computed='to send'] | D9=datetime.datetime(2025, 7, 11, 0, 0) [computed=datetime.datetime(2025, 7, 11, 0, 0)] | E9='Expense 009' [computed='Expense 009'] | F9='IVMDG2507043' [computed='IVMDG2507043'] | G9='Legal' [computed='Legal'] | H9='Company Setup' [computed='Company Setup'] | I9='MD Legal' [computed='MD Legal'] | J9=-32100 [computed=-32100] | K9='THB' [computed='THB'] | L9='Bank Transfer' [computed='Bank Transfer'] | M9=9 [computed=9] | N9=1 [computed=1] | O9='Invoice' [computed='Invoice'] | P9='MD Legal contract signature fee' [computed='MD Legal contract signature fee']
+  Row 10: A10='YES' [computed='YES'] | B10='to send' [computed='to send'] | D10=datetime.datetime(2025, 7, 30, 0, 0) [computed=datetime.datetime(2025, 7, 30, 0, 0)] | E10='Expense 010' [computed='Expense 010'] | F10='6807030 - 6807029' [computed='6807030 - 6807029'] | G10='Legal' [computed='Legal'] | H10='Company Setup' [computed='Company Setup'] | I10='V.P. Capital Assets CO. LTD' [computed='V.P. Capital Assets CO. LTD'] | J10=-45379.77 [computed=-45379.77] | K10='THB' [computed='THB'] | L10='Bank Transfer' [computed='Bank Transfer'] | M10=10 [computed=10] | N10=1 [computed=1] | O10='Invoice' [computed='Invoice'] | P10='Office Rental Bangkok' [computed='Office Rental Bangkok']
+
+================================================================================
+SHEET: Shareholder Work
+================================================================================
+  Dimensions: A1:Z105
+  Max Row: 105, Max Col: 26
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Work'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 1005
+  Data types: {'text': 59, 'date': 84, 'number': 422, 'formula': 440}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Work' [computed='Work']
+  Row 3: A3='Days of work                                      Hours' [computed='Days of work                                      Hours'] | B3='200 THB/Hr' [computed='200 THB/Hr']
+  Row 5: A5='Month' [computed='Month'] | B5='Hour Rate' [computed='Hour Rate'] | C5='Lorenzo (hours)' [computed='Lorenzo (hours)'] | D5='Lorenzo (THB)' [computed='Lorenzo (THB)'] | E5='Stella+Peppe (hours)' [computed='Stella+Peppe (hours)'] | F5='Stella+Peppe (THB)' [computed='Stella+Peppe (THB)'] | G5='Bruce MIFSUD (hours)' [computed='Bruce MIFSUD (hours)'] | H5='Bruce MIFSUD (THB)' [computed='Bruce MIFSUD (THB)'] | I5='Hanna (hours)' [computed='Hanna (hours)'] | J5='Hanna (THB)' [computed='Hanna (THB)'] | L5='Total Month (THB)' [computed='Total Month (THB)']
+  Row 6: A6=datetime.datetime(2024, 7, 1, 0, 0) [computed=datetime.datetime(2024, 7, 1, 0, 0)] | B6=200 [computed=200] | C6=90 [computed=90] | D6='=$B6*C6' [computed=18000] | E6=50 [computed=50] | F6='=$B6*E6' [computed=10000] | G6=0 [computed=0] | H6='=$B6*G6' [computed=0] | I6=0 [computed=0] | J6='=$B6*I6' [computed=0] | L6='=D6+F6+H6+J6' [computed=28000]
+  Row 7: A7=datetime.datetime(2024, 8, 1, 0, 0) [computed=datetime.datetime(2024, 8, 1, 0, 0)] | B7=200 [computed=200] | C7=90 [computed=90] | D7='=$B7*C7' [computed=18000] | E7=50 [computed=50] | F7='=$B7*E7' [computed=10000] | G7=0 [computed=0] | H7='=$B7*G7' [computed=0] | I7=0 [computed=0] | J7='=$B7*I7' [computed=0] | L7='=D7+F7+H7+J7' [computed=28000]
+  Row 8: A8=datetime.datetime(2024, 9, 1, 0, 0) [computed=datetime.datetime(2024, 9, 1, 0, 0)] | B8=200 [computed=200] | C8=90 [computed=90] | D8='=$B8*C8' [computed=18000] | E8=50 [computed=50] | F8='=$B8*E8' [computed=10000] | G8=0 [computed=0] | H8='=$B8*G8' [computed=0] | I8=0 [computed=0] | J8='=$B8*I8' [computed=0] | L8='=D8+F8+H8+J8' [computed=28000]
+  Row 9: A9=datetime.datetime(2024, 10, 1, 0, 0) [computed=datetime.datetime(2024, 10, 1, 0, 0)] | B9=200 [computed=200] | C9=90 [computed=90] | D9='=$B9*C9' [computed=18000] | E9=50 [computed=50] | F9='=$B9*E9' [computed=10000] | G9=0 [computed=0] | H9='=$B9*G9' [computed=0] | I9=0 [computed=0] | J9='=$B9*I9' [computed=0] | L9='=D9+F9+H9+J9' [computed=28000]
+  Row 10: A10=datetime.datetime(2024, 11, 1, 0, 0) [computed=datetime.datetime(2024, 11, 1, 0, 0)] | B10=200 [computed=200] | C10=90 [computed=90] | D10='=$B10*C10' [computed=18000] | E10=50 [computed=50] | F10='=$B10*E10' [computed=10000] | G10=0 [computed=0] | H10='=$B10*G10' [computed=0] | I10=0 [computed=0] | J10='=$B10*I10' [computed=0] | L10='=D10+F10+H10+J10' [computed=28000]
+
+  --- FORMULAS (440 total) ---
+    D6: =$B6*C6
+    L6: =D6+F6+H6+J6
+    M18: =SUM(L6:L18)
+    D19: =B19*C19
+    J84: =I84*$B84
+
+================================================================================
+SHEET: To Do
+================================================================================
+  Dimensions: A1:G74
+  Max Row: 74, Max Col: 7
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'To Do'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 505
+  Data types: {'text': 451, 'date': 54}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='To Do' [computed='To Do']
+  Row 3: A3='PROJECT' [computed='PROJECT'] | B3='DEPARTMENT' [computed='DEPARTMENT'] | C3='TOPIC' [computed='TOPIC'] | D3='RESPONSIBLE PERSON' [computed='RESPONSIBLE PERSON'] | E3='STATUS NOTES' [computed='STATUS NOTES'] | F3='TARGET DATE' [computed='TARGET DATE'] | G3='STATUS' [computed='STATUS']
+  Row 4: A4='EasyLife' [computed='EasyLife'] | B4='Legal' [computed='Legal'] | C4='Thailand bank status' [computed='Thailand bank status'] | D4='Lorenzo' [computed='Lorenzo'] | E4='Bank account operational. Completed 18/03' [computed='Bank account operational. Completed 18/03'] | F4=datetime.datetime(2026, 3, 18, 0, 0) [computed=datetime.datetime(2026, 3, 18, 0, 0)] | G4='Complete' [computed='Complete']
+  Row 5: A5='EasyLife' [computed='EasyLife'] | B5='Renovation' [computed='Renovation'] | C5='Waterman payment 15,000 THB' [computed='Waterman payment 15,000 THB'] | D5='Nicolo' [computed='Nicolo'] | E5='Nicolo | Paid via bank transfer on 28/03. Nicolo contacted to confirm receipt, no response. Also requested check of water pressure and camera installation. Next action: Nicolo / Lorenzo' [computed='Nicolo | Paid via bank transfer on 28/03. Nicolo contacted to confirm receipt, no response. Also requested check of water pressure and camera installation. Next action: Nicolo / Lorenzo'] | F5=datetime.datetime(2026, 3, 28, 0, 0) [computed=datetime.datetime(2026, 3, 28, 0, 0)] | G5='Complete' [computed='Complete']
+  Row 6: A6='EasyLife' [computed='EasyLife'] | B6='Operations' [computed='Operations'] | C6='Laptop login and Micorsoft office package' [computed='Laptop login and Micorsoft office package'] | D6='Lorenzo' [computed='Lorenzo'] | E6='Microsoft domain created, business package purchased, and email set up for Nicolo (GM@DreamT-CO.com). If additional emails are required, I can create them. Next action: Nicolo to test.' [computed='Microsoft domain created, business package purchased, and email set up for Nicolo (GM@DreamT-CO.com). If additional emails are required, I can create them. Next action: Nicolo to test.'] | F6=datetime.datetime(2026, 3, 28, 0, 0) [computed=datetime.datetime(2026, 3, 28, 0, 0)] | G6='Complete' [computed='Complete']
+  Row 7: A7='EasyLife' [computed='EasyLife'] | B7='Finance' [computed='Finance'] | C7='Lorenzo to send to Bruce process behind accounting document' [computed='Lorenzo to send to Bruce process behind accounting document'] | D7='Lorenzo' [computed='Lorenzo'] | E7='Lorenzo shared with Bruce on 28/03, including full mapping of the document and suggested requirements. Full document also shared on 27/03. Lorenzo available for any questions or meetings with developers. Next action: Bruce' [computed='Lorenzo shared with Bruce on 28/03, including full mapping of the document and suggested requirements. Full document also shared on 27/03. Lorenzo available for any questions or meetings with developers. Next action: Bruce'] | F7=datetime.datetime(2026, 3, 28, 0, 0) [computed=datetime.datetime(2026, 3, 28, 0, 0)] | G7='Ongoing' [computed='Ongoing']
+  Row 8: A8='EasyLife' [computed='EasyLife'] | B8='Operations' [computed='Operations'] | C8='Setup info email' [computed='Setup info email'] | D8='Lorenzo' [computed='Lorenzo'] | E8='Microsoft domain created, setup general email address, info@dreamt-co.com. Setup is completed, new email shared with partners and vendors. This is now shared with all shareholders. Next action: Lorenzo to monitor' [computed='Microsoft domain created, setup general email address, info@dreamt-co.com. Setup is completed, new email shared with partners and vendors. This is now shared with all shareholders. Next action: Lorenzo to monitor'] | F8=datetime.datetime(2026, 3, 29, 0, 0) [computed=datetime.datetime(2026, 3, 29, 0, 0)] | G8='Complete' [computed='Complete']
+  Row 9: A9='EasyLife' [computed='EasyLife'] | B9='Finance' [computed='Finance'] | C9='MD Legal invoice poymentq' [computed='MD Legal invoice poymentq'] | D9='Lorenzo' [computed='Lorenzo'] | E9='Lorenzo to pay all accounting invoices pending. Next Action' [computed='Lorenzo to pay all accounting invoices pending. Next Action'] | F9=datetime.datetime(2026, 3, 29, 0, 0) [computed=datetime.datetime(2026, 3, 29, 0, 0)] | G9='Complete' [computed='Complete']
+  Row 10: A10='EasyLife' [computed='EasyLife'] | B10='Finance' [computed='Finance'] | C10='Delivery 29/03' [computed='Delivery 29/03'] | D10='Nicolo' [computed='Nicolo'] | E10='Waiting for delivery. No deliveries received on 28/03. Next action: Nicolo to report status' [computed='Waiting for delivery. No deliveries received on 28/03. Next action: Nicolo to report status'] | F10=datetime.datetime(2026, 3, 29, 0, 0) [computed=datetime.datetime(2026, 3, 29, 0, 0)] | G10='Complete' [computed='Complete']
+
+================================================================================
+SHEET: Guests
+================================================================================
+  Dimensions: A1:S1048576
+  Max Row: 1048576, Max Col: 19
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Guests'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 1048736
+  Data types: {'text': 85, 'date': 26, 'formula': 1048593, 'number': 32}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Guests' [computed='Guests']
+  Row 3: A3='Date' [computed='Date'] | B3='Room' [computed='Room'] | C3='Check in' [computed='Check in'] | D3='Check out' [computed='Check out'] | E3='Nights' [computed='Nights'] | F3='Guest Name' [computed='Guest Name'] | G3='Guest' [computed='Guest'] | H3='Amount THB (day)' [computed='Amount THB (day)'] | I3='Amount THB (stay)' [computed='Amount THB (stay)'] | J3='Paid' [computed='Paid'] | K3='Payment' [computed='Payment'] | L3='To Pay' [computed='To Pay'] | M3='Invoice' [computed='Invoice'] | N3='Notes' [computed='Notes'] | O3='Email' [computed='Email'] | P3='Phone' [computed='Phone'] | Q3='TM30' [computed='TM30']
+  Row 4: A4='16/03/2026' [computed='16/03/2026'] | B4='3' [computed='3'] | C4=datetime.datetime(2026, 3, 16, 0, 0) [computed=datetime.datetime(2026, 3, 16, 0, 0)] | D4=datetime.datetime(2026, 3, 23, 0, 0) [computed=datetime.datetime(2026, 3, 23, 0, 0)] | E4='=D4-C4' [computed=7] | F4='Vadim' [computed='Vadim'] | G4='1' [computed='1'] | H4=500 [computed=500] | I4='=H4*E4' [computed=3500] | J4='Cash' [computed='Cash'] | K4='=I4' [computed=3500] | L4='=I4-K4' [computed=0] | M4='-' [computed='-'] | N4='Checked out 23/03' [computed='Checked out 23/03'] | O4='-' [computed='-'] | P4='-' [computed='-'] | Q4='yes' [computed='yes']
+  Row 5: A5=datetime.datetime(2026, 3, 20, 0, 0) [computed=datetime.datetime(2026, 3, 20, 0, 0)] | B5=1 [computed=1] | C5=datetime.datetime(2026, 3, 20, 0, 0) [computed=datetime.datetime(2026, 3, 20, 0, 0)] | D5=datetime.datetime(2026, 4, 5, 0, 0) [computed=datetime.datetime(2026, 4, 5, 0, 0)] | E5='=D5-C5' [computed=16] | F5='Graham' [computed='Graham'] | G5=1 [computed=1] | H5=700 [computed=700] | I5='=H5*E5' [computed=11200] | J5='Revolute' [computed='Revolute'] | K5=7700 [computed=7700] | L5='=I5-K5' [computed=3500] | M5='-' [computed='-'] | N5='Deposit 50% paid' [computed='Deposit 50% paid'] | O5='-' [computed='-'] | P5='-' [computed='-'] | Q5='yes' [computed='yes']
+  Row 6: A6=datetime.datetime(2026, 3, 21, 0, 0) [computed=datetime.datetime(2026, 3, 21, 0, 0)] | B6=9 [computed=9] | C6=datetime.datetime(2026, 3, 21, 0, 0) [computed=datetime.datetime(2026, 3, 21, 0, 0)] | D6=datetime.datetime(2026, 4, 21, 0, 0) [computed=datetime.datetime(2026, 4, 21, 0, 0)] | E6='=D6-C6' [computed=31] | F6='Becky' [computed='Becky'] | G6=1 [computed=1] | H6='=I6/E6' [computed=645.1612903225806] | I6=20000 [computed=20000] | J6='Cash' [computed='Cash'] | K6='=I6' [computed=20000] | L6='=I6-K6' [computed=0] | M6='-' [computed='-'] | N6='Paid' [computed='Paid'] | O6='-' [computed='-'] | P6='-' [computed='-'] | Q6='yes' [computed='yes']
+  Row 7: A7=datetime.datetime(2026, 3, 22, 0, 0) [computed=datetime.datetime(2026, 3, 22, 0, 0)] | B7=3 [computed=3] | C7=datetime.datetime(2026, 3, 22, 0, 0) [computed=datetime.datetime(2026, 3, 22, 0, 0)] | D7=datetime.datetime(2026, 4, 6, 0, 0) [computed=datetime.datetime(2026, 4, 6, 0, 0)] | E7='=D7-C7' [computed=15] | F7='Candice Galvan' [computed='Candice Galvan'] | G7=1 [computed=1] | H7='=I7/E7' [computed=800] | I7=12000 [computed=12000] | J7='Wise' [computed='Wise'] | K7=12000 [computed=12000] | L7='=I7-K7' [computed=0] | M7='-' [computed='-'] | N7='Deposit 50% paid' [computed='Deposit 50% paid'] | O7='-' [computed='-'] | P7='-' [computed='-'] | Q7='yes' [computed='yes']
+  Row 8: A8=datetime.datetime(2026, 3, 25, 0, 0) [computed=datetime.datetime(2026, 3, 25, 0, 0)] | B8=4 [computed=4] | C8=datetime.datetime(2026, 3, 25, 0, 0) [computed=datetime.datetime(2026, 3, 25, 0, 0)] | D8=datetime.datetime(2026, 4, 1, 0, 0) [computed=datetime.datetime(2026, 4, 1, 0, 0)] | E8='=D8-C8' [computed=7] | F8='Chris' [computed='Chris'] | G8=1 [computed=1] | H8='=I8/E8' [computed=600] | I8=4200 [computed=4200] | J8='To pay' [computed='To pay'] | K8=4200 [computed=4200] | L8=0 [computed=0] | M8='-' [computed='-'] | N8='-' [computed='-'] | O8='-' [computed='-'] | P8='-' [computed='-'] | Q8='yes' [computed='yes']
+  Row 9: A9=datetime.datetime(2026, 3, 26, 0, 0) [computed=datetime.datetime(2026, 3, 26, 0, 0)] | B9=2 [computed=2] | C9=datetime.datetime(2026, 3, 26, 0, 0) [computed=datetime.datetime(2026, 3, 26, 0, 0)] | D9=datetime.datetime(2026, 3, 31, 0, 0) [computed=datetime.datetime(2026, 3, 31, 0, 0)] | E9='=D9-C9' [computed=5] | F9='Fiona' [computed='Fiona'] | G9=1 [computed=1] | H9=600 [computed=600] | I9=3000 [computed=3000] | J9='To pay' [computed='To pay'] | K9=3000 [computed=3000] | L9='=I9-K9' [computed=0] | M9='-' [computed='-'] | N9='Paid' [computed='Paid'] | O9='-' [computed='-'] | P9='-' [computed='-'] | Q9='yes' [computed='yes']
+  Row 10: A10=datetime.datetime(2026, 3, 26, 0, 0) [computed=datetime.datetime(2026, 3, 26, 0, 0)] | B10=5 [computed=5] | C10=datetime.datetime(2026, 3, 26, 0, 0) [computed=datetime.datetime(2026, 3, 26, 0, 0)] | D10=datetime.datetime(2026, 4, 30, 0, 0) [computed=datetime.datetime(2026, 4, 30, 0, 0)] | E10='=D10-C10' [computed=35] | F10='Anna' [computed='Anna'] | G10=1 [computed=1] | H10='=I10/E10' [computed=571.4285714285714] | I10=20000 [computed=20000] | J10='Revolute' [computed='Revolute'] | K10='=I10/2' [computed=10000] | L10='=I10-K10' [computed=10000] | M10='-' [computed='-'] | N10='Deposit 50% paid' [computed='Deposit 50% paid'] | O10='-' [computed='-'] | P10='-' [computed='-'] | Q10='yes' [computed='yes']
+
+  --- FORMULAS (1048593 total) ---
+    E4: =D4-C4
+    I4: =H4*E4
+    K4: =I4
+    H6: =I6/E6
+    K10: =I10/2
+
+================================================================================
+SHEET: Guest Occupancy
+================================================================================
+  Dimensions: A1:AI58
+  Max Row: 58, Max Col: 35
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Occupancy'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 159
+  Data types: {'text': 66, 'number': 93}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Occupancy' [computed='Occupancy']
+  Row 3: A3='MARCH' [computed='MARCH'] | B3=1 [computed=1] | C3=2 [computed=2] | D3=3 [computed=3] | E3=4 [computed=4] | F3=5 [computed=5] | G3=6 [computed=6] | H3=7 [computed=7] | I3=8 [computed=8] | J3=9 [computed=9] | K3=10 [computed=10] | L3=11 [computed=11] | M3=12 [computed=12] | N3=13 [computed=13] | O3=14 [computed=14] | P3=15 [computed=15] | Q3=16 [computed=16] | R3=17 [computed=17] | S3=18 [computed=18] | T3=19 [computed=19] | U3=20 [computed=20] | V3=21 [computed=21] | W3=22 [computed=22] | X3=23 [computed=23] | Y3=24 [computed=24] | Z3=25 [computed=25] | AA3=26 [computed=26] | AB3=27 [computed=27] | AC3=28 [computed=28] | AD3=29 [computed=29] | AE3=30 [computed=30] | AF3=31 [computed=31]
+  Row 4: A4='Room 1' [computed='Room 1'] | U4='Graham' [computed='Graham'] | AI4='Check in' [computed='Check in']
+  Row 5: A5='Room 2' [computed='Room 2'] | AA5='Anna' [computed='Anna'] | AI5='In-house' [computed='In-house']
+  Row 6: A6='Room 3' [computed='Room 3'] | Q6='Vadim' [computed='Vadim'] | AI6='Completed' [computed='Completed']
+  Row 7: A7='Room 4' [computed='Room 4'] | AI7='Booked' [computed='Booked']
+  Row 8: A8='Room 5' [computed='Room 5'] | W8='Candice Galvan' [computed='Candice Galvan'] | AI8='Check in / Check out' [computed='Check in / Check out']
+  Row 9: A9='Room 6' [computed='Room 6'] | AI9='Not available' [computed='Not available']
+  Row 10: A10='Room 7' [computed='Room 7']
+
+================================================================================
+SHEET: Budget - Dashboard
+================================================================================
+  Dimensions: A1:N12
+  Max Row: 12, Max Col: 14
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Budget'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 99
+  Data types: {'text': 23, 'number': 14, 'formula': 62}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Budget' [computed='Budget']
+  Row 3: A3=2025 [computed=2025] | B3='Jan' [computed='Jan'] | C3='Feb' [computed='Feb'] | D3='Mar' [computed='Mar'] | E3='Apr' [computed='Apr'] | F3='May' [computed='May'] | G3='Jun' [computed='Jun'] | H3='Jul' [computed='Jul'] | I3='Aug' [computed='Aug'] | J3='Sep' [computed='Sep'] | K3='Oct' [computed='Oct'] | L3='Nov' [computed='Nov'] | M3='Dec' [computed='Dec'] | N3='Total' [computed='Total']
+  Row 4: A4='Revenue' [computed='Revenue'] | B4="='Budget - Revenue'!B24" [computed=0] | C4="='Budget - Revenue'!C24" [computed=0] | D4="='Budget - Revenue'!D24" [computed=56666.66666666666] | E4="='Budget - Revenue'!E24" [computed=143333.3333333333] | F4="='Budget - Revenue'!F24" [computed=249000] | G4="='Budget - Revenue'!G24" [computed=340000] | H4="='Budget - Revenue'!H24" [computed=358000] | I4="='Budget - Revenue'!I24" [computed=373000] | J4="='Budget - Revenue'!J24" [computed=388000] | K4="='Budget - Revenue'!K24" [computed=416500] | L4="='Budget - Revenue'!L24" [computed=416500] | M4="='Budget - Revenue'!M24" [computed=515000] | N4='=SUM(B4:M4)' [computed=3256000]
+  Row 5: A5='Opex' [computed='Opex'] | B5="='Budget - Expenses'!B4" [computed=103200] | C5="='Budget - Expenses'!C4" [computed=108200] | D5="='Budget - Expenses'!D4" [computed=178200] | E5="='Budget - Expenses'!E4" [computed=308200] | F5="='Budget - Expenses'!F4" [computed=308700] | G5="='Budget - Expenses'!G4" [computed=296700] | H5="='Budget - Expenses'!H4" [computed=1978950] | I5="='Budget - Expenses'!I4" [computed=235700] | J5="='Budget - Expenses'!J4" [computed=313700] | K5="='Budget - Expenses'!K4" [computed=233700] | L5="='Budget - Expenses'!L4" [computed=193700] | M5="='Budget - Expenses'!M4" [computed=329700] | N5='=SUM(B5:M5)' [computed=4588650]
+  Row 6: A6='Capex' [computed='Capex'] | B6="='Budget - Expenses'!B59" [computed=0] | C6="='Budget - Expenses'!C59" [computed=0] | D6="='Budget - Expenses'!D59" [computed=50000] | E6="='Budget - Expenses'!E59" [computed=120000] | F6="='Budget - Expenses'!F59" [computed=0] | G6="='Budget - Expenses'!G59" [computed=0] | H6="='Budget - Expenses'!H59" [computed=0] | I6="='Budget - Expenses'!I59" [computed=0] | J6="='Budget - Expenses'!J59" [computed=0] | K6="='Budget - Expenses'!K59" [computed=0] | L6="='Budget - Expenses'!L59" [computed=0] | M6="='Budget - Expenses'!M59" [computed=0] | N6='=SUM(B6:M6)' [computed=170000]
+  Row 8: A8='Result' [computed='Result'] | B8='=B4-B5-B6' [computed=-103200] | C8='=C4-C5-C6' [computed=-108200] | D8='=D4-D5-D6' [computed=-171533.33333333334] | E8='=E4-E5-E6' [computed=-284866.6666666667] | F8='=F4-F5-F6' [computed=-59700] | G8='=G4-G5-G6' [computed=43300] | H8='=H4-H5-H6' [computed=-1620950] | I8='=I4-I5-I6' [computed=137300] | J8='=J4-J5-J6' [computed=74300] | K8='=K4-K5-K6' [computed=182800] | L8='=L4-L5-L6' [computed=222800] | M8='=M4-M5-M6' [computed=185300] | N8='=SUM(B8:M8)' [computed=-1502650]
+  Row 10: A10='Investement' [computed='Investement'] | B10=0 [computed=0] | C10=0 [computed=0] | D10=200000 [computed=200000] | E10=500000 [computed=500000] | F10=0 [computed=0] | G10=0 [computed=0] | H10=1450000 [computed=1450000] | I10=0 [computed=0] | J10=0 [computed=0] | K10=0 [computed=0] | L10=0 [computed=0] | M10=0 [computed=0] | N10='=SUM(B10:M10)' [computed=2150000]
+
+  --- FORMULAS (62 total) ---
+    B4: ='Budget - Revenue'!B24
+    N4: =SUM(B4:M4)
+    B5: ='Budget - Expenses'!B4
+    B8: =B4-B5-B6
+    E12: =D12+E10+E8
+
+  --- CROSS-SHEET REFERENCES ---
+  References sheet 'Budget - Revenue':
+    B4: ='Budget - Revenue'!B24
+    C4: ='Budget - Revenue'!C24
+    D4: ='Budget - Revenue'!D24
+    E4: ='Budget - Revenue'!E24
+    F4: ='Budget - Revenue'!F24
+    ... and 7 more
+  References sheet 'Budget - Expenses':
+    B5: ='Budget - Expenses'!B4
+    C5: ='Budget - Expenses'!C4
+    D5: ='Budget - Expenses'!D4
+    E5: ='Budget - Expenses'!E4
+    F5: ='Budget - Expenses'!F4
+    ... and 19 more
+
+================================================================================
+SHEET: Budget - Revenue
+================================================================================
+  Dimensions: A1:P41
+  Max Row: 41, Max Col: 16
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Budget - Revenue'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 397
+  Data types: {'text': 76, 'number': 113, 'formula': 208}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Budget - Revenue' [computed='Budget - Revenue']
+  Row 2: B2='H' [computed='H'] | C2='H' [computed='H'] | D2='W' [computed='W'] | E2='W' [computed='W'] | F2='W' [computed='W'] | G2='L' [computed='L'] | H2='S' [computed='S'] | I2='S' [computed='S'] | J2='L' [computed='L'] | K2='L' [computed='L'] | L2='L' [computed='L'] | M2='H' [computed='H']
+  Row 3: A3=2026 [computed=2026] | B3='Jan' [computed='Jan'] | C3='Feb' [computed='Feb'] | D3='Mar' [computed='Mar'] | E3='Apr' [computed='Apr'] | F3='May' [computed='May'] | G3='Jun' [computed='Jun'] | H3='Jul' [computed='Jul'] | I3='Aug' [computed='Aug'] | J3='Sep' [computed='Sep'] | K3='Oct' [computed='Oct'] | L3='Nov' [computed='Nov'] | M3='Dec' [computed='Dec'] | N3='Total' [computed='Total'] | O3='Notes' [computed='Notes']
+  Row 4: A4='Room 1 - Renovated - Single' [computed='Room 1 - Renovated - Single'] | B4=0 [computed=0] | C4=0 [computed=0] | D4='=E4/2' [computed=6000] | E4='=F4/1.5' [computed=12000] | F4='=E30' [computed=18000] | G4='=J4' [computed=24000] | H4='=G4' [computed=24000] | I4='=H4' [computed=24000] | J4='=B30' [computed=24000] | K4='=J4' [computed=24000] | L4='=K4' [computed=24000] | M4='=D30' [computed=30000] | N4='=SUM(B4:M4)' [computed=210000]
+  Row 5: A5='Room 2 - Renovated - Single' [computed='Room 2 - Renovated - Single'] | B5=0 [computed=0] | C5=0 [computed=0] | D5='=E5/2' [computed=6000] | E5='=E4' [computed=12000] | F5=18000 [computed=18000] | G5='=G4' [computed=24000] | H5='=G5' [computed=24000] | I5='=H5' [computed=24000] | J5='=J4' [computed=24000] | K5='=J5' [computed=24000] | L5='=K5' [computed=24000] | M5='=M4' [computed=30000] | N5='=SUM(B5:M5)' [computed=210000]
+  Row 6: A6='Room 3 - Renovated - Single' [computed='Room 3 - Renovated - Single'] | B6=0 [computed=0] | C6=0 [computed=0] | D6='=E6/2' [computed=6000] | E6='=E5' [computed=12000] | F6=18000 [computed=18000] | G6='=G5' [computed=24000] | H6='=G6' [computed=24000] | I6='=H6' [computed=24000] | J6='=J5' [computed=24000] | K6='=J6' [computed=24000] | L6='=K6' [computed=24000] | M6='=M5' [computed=30000] | N6='=SUM(B6:M6)' [computed=210000]
+  Row 7: A7='Room 4 - Renovated - Single' [computed='Room 4 - Renovated - Single'] | B7=0 [computed=0] | C7=0 [computed=0] | D7='=E7/2' [computed=6000] | E7='=E6' [computed=12000] | F7=18000 [computed=18000] | G7='=G6' [computed=24000] | H7='=G7' [computed=24000] | I7='=H7' [computed=24000] | J7='=J6' [computed=24000] | K7='=J7' [computed=24000] | L7='=K7' [computed=24000] | M7='=M6' [computed=30000] | N7='=SUM(B7:M7)' [computed=210000]
+  Row 8: A8='Room 5 - Renovated - Single' [computed='Room 5 - Renovated - Single'] | B8=0 [computed=0] | C8=0 [computed=0] | D8='=E8/2' [computed=6000] | E8='=E7' [computed=12000] | F8=18000 [computed=18000] | G8='=G7' [computed=24000] | H8='=G8' [computed=24000] | I8='=H8' [computed=24000] | J8='=J7' [computed=24000] | K8='=J8' [computed=24000] | L8='=K8' [computed=24000] | M8='=M7' [computed=30000] | N8='=SUM(B8:M8)' [computed=210000]
+  Row 9: A9='Room 6 - Renovated Double' [computed='Room 6 - Renovated Double'] | B9=0 [computed=0] | C9=0 [computed=0] | D9='=E9/2' [computed=6666.666666666667] | E9='=F9/1.5' [computed=13333.333333333334] | F9='=E31' [computed=20000] | G9='=J9' [computed=28000] | H9='=G9' [computed=28000] | I9='=H9' [computed=28000] | J9='=B31' [computed=28000] | K9='=J9' [computed=28000] | L9='=K9' [computed=28000] | M9='=D31' [computed=35000] | N9='=SUM(B9:M9)' [computed=243000]
+  Row 10: A10='Room 7 - Renovated Double' [computed='Room 7 - Renovated Double'] | B10=0 [computed=0] | C10=0 [computed=0] | D10='=E10/2' [computed=6666.666666666667] | E10='=E9' [computed=13333.333333333334] | F10=20000 [computed=20000] | G10='=G9' [computed=28000] | H10='=G10' [computed=28000] | I10='=H10' [computed=28000] | J10='=J9' [computed=28000] | K10='=J10' [computed=28000] | L10='=K10' [computed=28000] | M10='=M9' [computed=35000] | N10='=SUM(B10:M10)' [computed=243000]
+
+  --- FORMULAS (208 total) ---
+    D4: =E4/2
+    E4: =F4/1.5
+    F4: =E30
+    N4: =SUM(B4:M4)
+    B30: =C30-G30
+    G30: =D30*F30
+    B37: =B30/20
+
+================================================================================
+SHEET: Budget - Expenses
+================================================================================
+  Dimensions: A1:U64
+  Max Row: 64, Max Col: 21
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Budget - Expenses'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 855
+  Data types: {'text': 74, 'number': 564, 'formula': 217}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Budget - Expenses' [computed='Budget - Expenses']
+  Row 3: A3=2026 [computed=2026] | B3='Jan' [computed='Jan'] | C3='Feb' [computed='Feb'] | D3='Mar' [computed='Mar'] | E3='Apr' [computed='Apr'] | F3='May' [computed='May'] | G3='Jun' [computed='Jun'] | H3='Jul' [computed='Jul'] | I3='Aug' [computed='Aug'] | J3='Sept' [computed='Sept'] | K3='Oct' [computed='Oct'] | L3='Nov' [computed='Nov'] | M3='Dec' [computed='Dec'] | N3='Total' [computed='Total']
+  Row 4: A4='OPERATING COSTS (OPEX)' [computed='OPERATING COSTS (OPEX)'] | B4='=B5+B15+B20+B25+B31+B38+B42+B45+B48+B54' [computed=103200] | C4='=C5+C15+C20+C25+C31+C38+C42+C45+C48+C54' [computed=108200] | D4='=D5+D15+D20+D25+D31+D38+D42+D45+D48+D54' [computed=178200] | E4='=E5+E15+E20+E25+E31+E38+E42+E45+E48+E54' [computed=308200] | F4='=F5+F15+F20+F25+F31+F38+F42+F45+F48+F54' [computed=308700] | G4='=G5+G15+G20+G25+G31+G38+G42+G45+G48+G54' [computed=296700] | H4='=H5+H15+H20+H25+H31+H38+H42+H45+H48+H54' [computed=1978950] | I4='=I5+I15+I20+I25+I31+I38+I42+I45+I48+I54' [computed=235700] | J4='=J5+J15+J20+J25+J31+J38+J42+J45+J48+J54' [computed=313700] | K4='=K5+K15+K20+K25+K31+K38+K42+K45+K48+K54' [computed=233700] | L4='=L5+L15+L20+L25+L31+L38+L42+L45+L48+L54' [computed=193700] | M4='=M5+M15+M20+M25+M31+M38+M42+M45+M48+M54' [computed=329700] | N4='=SUM(B4:M4)' [computed=4588650]
+  Row 5: A5='Staff Costs' [computed='Staff Costs'] | B5='=SUM(B6:B14)' [computed=73700] | C5='=SUM(C6:C14)' [computed=73700] | D5='=SUM(D6:D14)' [computed=73700] | E5='=SUM(E6:E14)' [computed=123200] | F5='=SUM(F6:F14)' [computed=130700] | G5='=SUM(G6:G14)' [computed=128700] | H5='=SUM(H6:H14)' [computed=143700] | I5='=SUM(I6:I14)' [computed=134200] | J5='=SUM(J6:J14)' [computed=134200] | K5='=SUM(K6:K14)' [computed=134200] | L5='=SUM(L6:L14)' [computed=134200] | M5='=SUM(M6:M14)' [computed=193200] | N5='=SUM(B5:M5)' [computed=1477400]
+  Row 6: A6='Management' [computed='Management'] | B6=40000 [computed=40000] | C6=40000 [computed=40000] | D6=40000 [computed=40000] | E6=40000 [computed=40000] | F6=45000 [computed=45000] | G6=45000 [computed=45000] | H6=45000 [computed=45000] | I6=50000 [computed=50000] | J6=50000 [computed=50000] | K6=50000 [computed=50000] | L6=50000 [computed=50000] | M6=90000 [computed=90000] | N6='=SUM(B6:M6)' [computed=585000]
+  Row 7: A7='Housekeeping' [computed='Housekeeping'] | B7=12000 [computed=12000] | C7=12000 [computed=12000] | D7=12000 [computed=12000] | E7=12000 [computed=12000] | F7=12000 [computed=12000] | G7=12000 [computed=12000] | H7=12000 [computed=12000] | I7=12000 [computed=12000] | J7=12000 [computed=12000] | K7=12000 [computed=12000] | L7=12000 [computed=12000] | M7=12000 [computed=12000] | N7='=SUM(B7:M7)' [computed=144000]
+  Row 8: A8='Gardener' [computed='Gardener'] | B8=15000 [computed=15000] | C8=15000 [computed=15000] | D8=15000 [computed=15000] | E8=15000 [computed=15000] | F8=15000 [computed=15000] | G8=15000 [computed=15000] | H8=15000 [computed=15000] | I8=15000 [computed=15000] | J8=15000 [computed=15000] | K8=15000 [computed=15000] | L8=15000 [computed=15000] | M8=15000 [computed=15000] | N8='=SUM(B8:M8)' [computed=180000]
+  Row 9: A9='Gardener Support' [computed='Gardener Support'] | B9=0 [computed=0] | C9=0 [computed=0] | D9=0 [computed=0] | E9=7000 [computed=7000] | F9=7000 [computed=7000] | G9=7000 [computed=7000] | H9=7000 [computed=7000] | I9=7000 [computed=7000] | J9=7000 [computed=7000] | K9=7000 [computed=7000] | L9=7000 [computed=7000] | M9=7000 [computed=7000] | N9='=SUM(B9:M9)' [computed=63000]
+  Row 10: A10='Maintenance' [computed='Maintenance'] | B10=0 [computed=0] | C10=0 [computed=0] | D10=0 [computed=0] | E10=18000 [computed=18000] | F10=18000 [computed=18000] | G10=18000 [computed=18000] | H10=18000 [computed=18000] | I10=18000 [computed=18000] | J10=18000 [computed=18000] | K10=18000 [computed=18000] | L10=18000 [computed=18000] | M10=18000 [computed=18000] | N10='=SUM(B10:M10)' [computed=162000]
+
+  --- FORMULAS (217 total) ---
+    B4: =B5+B15+B20+B25+B31+B38+B42+B45+B48+B54
+    N4: =SUM(B4:M4)
+    B13: =(B6+B7+B8+B9+B10+B11)/100*10
+    H43: ='Budget - Rent'!C5
+
+  --- CROSS-SHEET REFERENCES ---
+  References sheet 'Budget - Rent':
+    H43: ='Budget - Rent'!C5
+
+================================================================================
+SHEET: Budget - Rent
+================================================================================
+  Dimensions: A1:E27
+  Max Row: 27, Max Col: 5
+
+  --- ROW 1 (Headers/First Row) ---
+    Col A (1): 'Rent'
+
+  --- ALL NON-EMPTY CELLS (first 200) ---
+  Total non-empty cells: 89
+  Data types: {'text': 25, 'number': 21, 'formula': 43}
+
+  --- SAMPLE DATA (rows 1-10, all columns) ---
+  Row 1: A1='Rent' [computed='Rent']
+  Row 3: A3='Year' [computed='Year'] | B3='Year' [computed='Year'] | C3='Rent' [computed='Rent']
+  Row 4: A4=1 [computed=1] | B4='Rent 2025' [computed='Rent 2025'] | C4=1725000 [computed=1725000] | E4='=C4*0.0266' [computed=45885]
+  Row 5: A5=2 [computed=2] | B5='Rent 2026' [computed='Rent 2026'] | C5='=C4+(C4/100)' [computed=1742250] | E5='=C5*0.0266' [computed=46343.85]
+  Row 6: A6=3 [computed=3] | B6='Rent 2027' [computed='Rent 2027'] | C6='=C5+(C5/100)' [computed=1759672.5] | E6='=C6*0.0266' [computed=46807.288499999995]
+  Row 7: A7=4 [computed=4] | B7='Rent 2028' [computed='Rent 2028'] | C7='=C6+(C6/100)' [computed=1777269.225] | E7='=C7*0.0266' [computed=47275.361385]
+  Row 8: A8=5 [computed=5] | B8='Rent 2029' [computed='Rent 2029'] | C8='=C7+(C7/100)' [computed=1795041.9172500002] | E8='=C8*0.0266' [computed=47748.114998850004]
+  Row 9: A9=6 [computed=6] | B9='Rent 2030' [computed='Rent 2030'] | C9='=C8+(C8/100)' [computed=1812992.3364225002] | E9='=C9*0.0266' [computed=48225.5961488385]
+  Row 10: A10=7 [computed=7] | B10='Rent 2031' [computed='Rent 2031'] | C10='=C9+(C9/100)' [computed=1831122.2597867253] | E10='=C10*0.0266' [computed=48707.85211032689]
+
+  --- FORMULAS (43 total) ---
+    E4: =C4*0.0266
+    C5: =C4+(C4/100)
+    C25: =SUM(C4:C24)
+    C27: =AVERAGE(C4:C23)
+
+================================================================================
+CROSS-SHEET DEPENDENCY MAP
+================================================================================
+  'Status_of_Account' reads from: {'=Expenses', '=Founding', '=Revenue', '+Revenue'}
+  'Founding' reads from: {'Shareholder Work'}
+  'Revenue' reads from: {'=Guests', '+Guests'}
+  'Budget - Dashboard' reads from: {'Budget - Expenses', 'Budget - Revenue'}
+  'Budget - Expenses' reads from: {'Budget - Rent'}
+
+================================================================================
+NAMED RANGES / DEFINED NAMES
+================================================================================
+  None found
