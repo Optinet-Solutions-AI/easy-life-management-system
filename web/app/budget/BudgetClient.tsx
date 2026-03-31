@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatTHB, MONTHS } from '@/types'
+import { MONTHS } from '@/types'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { BudgetRevenue, BudgetExpense, BudgetRent } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -21,6 +22,7 @@ export default function BudgetClient({
   initialExpenses: BudgetExpense[]
   initialRent: BudgetRent[]
 }) {
+  const { format } = useCurrency()
   const [tab, setTab] = useState<Tab>('dashboard')
   const [revenue, setRevenue] = useState(initialRevenue)
   const [expenses, setExpenses] = useState(initialExpenses)
@@ -113,10 +115,10 @@ export default function BudgetClient({
       {tab === 'dashboard' && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatCard label="Total Revenue" value={formatTHB(totalRevYr)} color="green" sub={`Budget ${year}`} />
-            <StatCard label="Total OPEX" value={formatTHB(totalOpexYr)} color="red" />
-            <StatCard label="Total CAPEX" value={formatTHB(totalCapexYr)} color="yellow" />
-            <StatCard label="Net Result" value={formatTHB(totalResultYr)} color={totalResultYr >= 0 ? 'green' : 'red'} />
+            <StatCard label="Total Revenue" value={format(totalRevYr)} color="green" sub={`Budget ${year}`} />
+            <StatCard label="Total OPEX" value={format(totalOpexYr)} color="red" />
+            <StatCard label="Total CAPEX" value={format(totalCapexYr)} color="yellow" />
+            <StatCard label="Net Result" value={format(totalResultYr)} color={totalResultYr >= 0 ? 'green' : 'red'} />
           </div>
           <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
             <table className="w-full text-sm min-w-[700px]">
@@ -138,10 +140,10 @@ export default function BudgetClient({
                     <td className="px-4 py-2.5 font-medium">{row.label}</td>
                     {row.values.map((v, i) => (
                       <td key={i} className={`px-2 py-2.5 text-right text-xs ${v < 0 ? 'text-red-500' : v > 0 ? row.cls : 'text-slate-300'}`}>
-                        {v !== 0 ? formatTHB(v).replace('฿', '').replace(',', ',') : '—'}
+                        {v !== 0 ? format(v).replace('฿', '').replace(',', ',') : '—'}
                       </td>
                     ))}
-                    <td className={`px-4 py-2.5 text-right ${row.cls}`}>{formatTHB(row.total)}</td>
+                    <td className={`px-4 py-2.5 text-right ${row.cls}`}>{format(row.total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -179,12 +181,12 @@ export default function BudgetClient({
                           <td key={mi} className="px-2 py-2.5 text-right text-xs">
                             {entry ? (
                               <button onClick={() => { setEditingId(entry.id); setForm(entry); setOpenModal('revenue') }}
-                                className="text-green-600 hover:underline">{formatTHB(entry.amount_thb).replace('฿', '')}</button>
+                                className="text-green-600 hover:underline">{format(entry.amount_thb).replace('฿', '')}</button>
                             ) : '—'}
                           </td>
                         )
                       })}
-                      <td className="px-4 py-2.5 text-right font-semibold text-green-600">{rowTotal > 0 ? formatTHB(rowTotal) : '—'}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-green-600">{rowTotal > 0 ? format(rowTotal) : '—'}</td>
                     </tr>
                   )
                 })}
@@ -221,7 +223,7 @@ export default function BudgetClient({
                     <td className="px-4 py-2.5 text-slate-600">{e.category}</td>
                     <td className="px-4 py-2.5 font-medium">{e.item_name}</td>
                     <td className="px-4 py-2.5 text-slate-500">{MONTHS[e.month - 1]}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold">{formatTHB(e.amount_thb)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold">{format(e.amount_thb)}</td>
                     <td className="px-4 py-2.5">
                       <button onClick={() => { setEditingId(e.id); setForm(e); setOpenModal('expense') }} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
                     </td>
@@ -258,9 +260,9 @@ export default function BudgetClient({
                   <tr key={r.id} className="hover:bg-slate-50">
                     <td className="px-4 py-2.5 font-semibold">Year {r.year_number}</td>
                     <td className="px-4 py-2.5 text-slate-600">{r.year_label}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold">{formatTHB(r.rent_thb)}</td>
-                    <td className="px-4 py-2.5 text-right text-slate-500">{formatTHB(r.rent_thb * 0.0266)}</td>
-                    <td className="px-4 py-2.5 text-right">{formatTHB(r.rent_thb / 12)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold">{format(r.rent_thb)}</td>
+                    <td className="px-4 py-2.5 text-right text-slate-500">{format(r.rent_thb * 0.0266)}</td>
+                    <td className="px-4 py-2.5 text-right">{format(r.rent_thb / 12)}</td>
                     <td className="px-4 py-2.5">
                       <button onClick={() => { setEditingId(r.id); setForm(r); setOpenModal('rent') }} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
                     </td>
@@ -329,8 +331,8 @@ export default function BudgetClient({
             <div><label className="label">Annual Rent (THB)</label><input type="number" className="input" value={(form.rent_thb as number) ?? 0} onChange={e => setForm(f => ({ ...f, rent_thb: +e.target.value }))} /></div>
             {(form.rent_thb as number) > 0 && (
               <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600">
-                <p>Monthly: <strong>{formatTHB((form.rent_thb as number) / 12)}</strong></p>
-                <p>VAT (2.66%): <strong>{formatTHB((form.rent_thb as number) * 0.0266)}</strong></p>
+                <p>Monthly: <strong>{format((form.rent_thb as number) / 12)}</strong></p>
+                <p>VAT (2.66%): <strong>{format((form.rent_thb as number) * 0.0266)}</strong></p>
               </div>
             )}
           </div>

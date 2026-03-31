@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatTHB, formatDate } from '@/types'
+import { formatDate } from '@/types'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { Revenue } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -14,6 +15,7 @@ const EMPTY: Partial<Revenue> = { date: '', type: '', supplier: '', amount_thb: 
 interface GuestPayment { check_in: string; check_out: string; amount_thb_stay: number | null; payment: number | null; guest_name: string }
 
 export default function RevenueClient({ initialRevenue, guestPayments }: { initialRevenue: Revenue[]; guestPayments: GuestPayment[] }) {
+  const { format } = useCurrency()
   const [revenues, setRevenues] = useState<Revenue[]>(initialRevenue)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Revenue | null>(null)
@@ -61,9 +63,9 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <StatCard label="Total Revenue Logged" value={formatTHB(totalRevenue)} color="green" />
-        <StatCard label="Total Guest Payments" value={formatTHB(totalGuestPayments)} color="green" sub="Sum of paid amounts in Guests" />
-        <StatCard label="Outstanding from Guests" value={formatTHB(outstanding)} color={outstanding > 0 ? 'red' : 'default'} />
+        <StatCard label="Total Revenue Logged" value={format(totalRevenue)} color="green" />
+        <StatCard label="Total Guest Payments" value={format(totalGuestPayments)} color="green" sub="Sum of paid amounts in Guests" />
+        <StatCard label="Outstanding from Guests" value={format(outstanding)} color={outstanding > 0 ? 'red' : 'default'} />
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -84,7 +86,7 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
                 <td className="px-4 py-2.5">{formatDate(r.date)}</td>
                 <td className="px-4 py-2.5 font-medium">{r.type}</td>
                 <td className="px-4 py-2.5 text-slate-600">{r.supplier}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-green-600">{formatTHB(r.amount_thb)}</td>
+                <td className="px-4 py-2.5 text-right font-semibold text-green-600">{format(r.amount_thb)}</td>
                 <td className="px-4 py-2.5 text-slate-500 text-xs">{r.notes}</td>
                 <td className="px-4 py-2.5">
                   <div className="flex gap-2 justify-end">
@@ -98,7 +100,7 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
           <tfoot className="bg-slate-50 border-t-2 border-slate-200">
             <tr>
               <td colSpan={3} className="px-4 py-2.5 font-semibold text-slate-600">Total</td>
-              <td className="px-4 py-2.5 text-right font-bold text-green-600">{formatTHB(totalRevenue)}</td>
+              <td className="px-4 py-2.5 text-right font-bold text-green-600">{format(totalRevenue)}</td>
               <td colSpan={2} />
             </tr>
           </tfoot>

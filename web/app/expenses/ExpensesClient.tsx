@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatTHB, formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, SHAREHOLDERS } from '@/types'
+import { formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, SHAREHOLDERS } from '@/types'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { Expense } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -17,6 +18,7 @@ const EMPTY: Partial<Expense> = {
 }
 
 export default function ExpensesClient({ initialExpenses }: { initialExpenses: Expense[] }) {
+  const { format } = useCurrency()
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
@@ -88,9 +90,9 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Total Expenses" value={formatTHB(expenses.reduce((s, e) => s + Math.abs(e.amount ?? 0), 0))} color="red" />
-        <StatCard label="Filtered Total" value={formatTHB(total)} color={catFilter || search || legalOnly ? 'yellow' : 'default'} />
-        <StatCard label="Legal Expenses" value={formatTHB(expenses.filter(e => e.is_legal).reduce((s, e) => s + Math.abs(e.amount ?? 0), 0))} color="blue" />
+        <StatCard label="Total Expenses" value={format(expenses.reduce((s, e) => s + Math.abs(e.amount ?? 0), 0))} color="red" />
+        <StatCard label="Filtered Total" value={format(total)} color={catFilter || search || legalOnly ? 'yellow' : 'default'} />
+        <StatCard label="Legal Expenses" value={format(expenses.filter(e => e.is_legal).reduce((s, e) => s + Math.abs(e.amount ?? 0), 0))} color="blue" />
         <StatCard label="Records" value={filtered.length.toString()} sub={`of ${expenses.length} total`} />
       </div>
 
@@ -138,7 +140,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
                   </td>
                   <td className="px-4 py-2.5 font-medium">{e.supplier}</td>
                   <td className="px-4 py-2.5 text-slate-500 max-w-xs truncate">{e.description}</td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-red-600">{formatTHB(Math.abs(e.amount ?? 0))}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-red-600">{format(Math.abs(e.amount ?? 0))}</td>
                   <td className="px-4 py-2.5 text-slate-500">{e.method}</td>
                   <td className="px-4 py-2.5 text-slate-500">{e.paid_by}</td>
                   <td className="px-4 py-2.5">
@@ -158,7 +160,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
             <tfoot className="bg-slate-50 border-t-2 border-slate-200">
               <tr>
                 <td colSpan={5} className="px-4 py-2.5 text-sm font-semibold text-slate-600">Filtered Total</td>
-                <td className="px-4 py-2.5 text-right font-bold text-red-600">{formatTHB(total)}</td>
+                <td className="px-4 py-2.5 text-right font-bold text-red-600">{format(total)}</td>
                 <td colSpan={4} />
               </tr>
             </tfoot>

@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatTHB, formatDate, PAYMENT_METHODS, ROOMS } from '@/types'
+import { formatDate, PAYMENT_METHODS, ROOMS } from '@/types'
 import type { Guest } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
+import { useCurrency } from '@/context/CurrencyContext'
 
 const EMPTY: Partial<Guest> = {
   room: 1, check_in: '', check_out: '', guest_name: '', guest_count: 1,
@@ -15,6 +16,7 @@ const EMPTY: Partial<Guest> = {
 }
 
 export default function GuestsClient({ initialGuests }: { initialGuests: Guest[] }) {
+  const { format } = useCurrency()
   const [guests, setGuests] = useState<Guest[]>(initialGuests)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Guest | null>(null)
@@ -100,8 +102,8 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{label}</span>
                 <div className="text-right">
-                  <p className="text-xs text-slate-400">Total {formatTHB(stay)}</p>
-                  <p className={`text-sm font-bold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{bal > 0 ? `Owes ${formatTHB(bal)}` : 'Paid'}</p>
+                  <p className="text-xs text-slate-400">Total {format(stay)}</p>
+                  <p className={`text-sm font-bold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{bal > 0 ? `Owes ${format(bal)}` : 'Paid'}</p>
                 </div>
               </div>
             </div>
@@ -144,9 +146,9 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                     <td className="px-4 py-3 text-slate-600">{formatDate(g.check_in)}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(g.check_out)}</td>
                     <td className="px-4 py-3 text-right">{ns}</td>
-                    <td className="px-4 py-3 text-right font-medium">{formatTHB(stay)}</td>
-                    <td className="px-4 py-3 text-right text-green-600">{formatTHB(g.payment)}</td>
-                    <td className={`px-4 py-3 text-right font-semibold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{formatTHB(bal)}</td>
+                    <td className="px-4 py-3 text-right font-medium">{format(stay)}</td>
+                    <td className="px-4 py-3 text-right text-green-600">{format(g.payment)}</td>
+                    <td className={`px-4 py-3 text-right font-semibold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{format(bal)}</td>
                     <td className="px-4 py-3"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{label}</span></td>
                     <td className="px-4 py-3 text-center">{g.tm30 ? '✅' : '—'}</td>
                     <td className="px-4 py-3">
@@ -232,7 +234,7 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
             </div>
             {balance > 0 && (
               <div className="col-span-2 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-                Balance due: <strong>{formatTHB(balance)}</strong>
+                Balance due: <strong>{format(balance)}</strong>
               </div>
             )}
           </div>

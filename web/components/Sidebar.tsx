@@ -17,6 +17,7 @@ import {
   Menu,
   X,
 } from 'lucide-react'
+import { useCurrency } from '@/context/CurrencyContext'
 
 const nav = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -66,10 +67,29 @@ function SidebarHeader() {
   )
 }
 
+function CurrencyToggle() {
+  const { currency, toggle } = useCurrency()
+  return (
+    <button
+      onClick={toggle}
+      className="flex w-full items-center bg-slate-800 hover:bg-slate-700 rounded-lg p-1 text-xs font-medium transition-colors"
+      title="Toggle currency"
+    >
+      <span className={`flex-1 text-center py-1 rounded-md transition-colors ${currency === 'THB' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
+        ฿ THB
+      </span>
+      <span className={`flex-1 text-center py-1 rounded-md transition-colors ${currency === 'EUR' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
+        € EUR
+      </span>
+    </button>
+  )
+}
+
 function SidebarFooter() {
   return (
-    <div className="px-5 py-4 border-t border-slate-700 shrink-0">
-      <p className="text-xs text-slate-500">DreamT-CO © 2026</p>
+    <div className="px-3 py-4 border-t border-slate-700 shrink-0 space-y-3">
+      <CurrencyToggle />
+      <p className="text-xs text-slate-500 px-2">DreamT-CO © 2026</p>
     </div>
   )
 }
@@ -77,6 +97,7 @@ function SidebarFooter() {
 export default function Sidebar() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const { currency, toggle } = useCurrency()
 
   // Close drawer on route change
   useEffect(() => { setOpen(false) }, [pathname])
@@ -94,10 +115,17 @@ export default function Sidebar() {
         <button onClick={() => setOpen(true)} className="text-slate-300 hover:text-white p-1">
           <Menu size={22} />
         </button>
-        <div>
+        <div className="flex-1">
           <p className="text-xs text-slate-400 leading-none">Easy Life</p>
           <p className="text-sm font-bold text-white leading-tight">Management Board</p>
         </div>
+        <button
+          onClick={toggle}
+          className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs font-medium"
+        >
+          <span className={`px-2 py-1 rounded-md transition-colors ${currency === 'THB' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>฿</span>
+          <span className={`px-2 py-1 rounded-md transition-colors ${currency === 'EUR' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>€</span>
+        </button>
       </div>
 
       {/* Mobile drawer backdrop */}

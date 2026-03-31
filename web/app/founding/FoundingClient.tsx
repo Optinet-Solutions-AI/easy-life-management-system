@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatTHB, formatDate, SHAREHOLDERS, PAYMENT_METHODS } from '@/types'
+import { formatDate, SHAREHOLDERS, PAYMENT_METHODS } from '@/types'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { FoundingContribution } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -12,6 +13,7 @@ import StatCard from '@/components/StatCard'
 const EMPTY: Partial<FoundingContribution> = { date: '', method: '', shareholder: '', amount_thb: null, amount_eur: null, notes: '' }
 
 export default function FoundingClient({ initialContributions }: { initialContributions: FoundingContribution[] }) {
+  const { format } = useCurrency()
   const [contributions, setContributions] = useState<FoundingContribution[]>(initialContributions)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<FoundingContribution | null>(null)
@@ -65,12 +67,12 @@ export default function FoundingClient({ initialContributions }: { initialContri
       {/* Per shareholder summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {perShareholder.map(({ name, total }, i) => (
-          <StatCard key={name} label={name.split(' ')[0]} value={formatTHB(total)} color={colors[i % colors.length]}
+          <StatCard key={name} label={name.split(' ')[0]} value={format(total)} color={colors[i % colors.length]}
             sub={grandTotal > 0 ? `${((total / grandTotal) * 100).toFixed(1)}%` : undefined} />
         ))}
       </div>
       <div className="mb-6">
-        <StatCard label="Total Capital Founded" value={formatTHB(grandTotal)} color="blue" />
+        <StatCard label="Total Capital Founded" value={format(grandTotal)} color="blue" />
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -92,7 +94,7 @@ export default function FoundingClient({ initialContributions }: { initialContri
                 <td className="px-4 py-2.5">{formatDate(c.date)}</td>
                 <td className="px-4 py-2.5 font-medium">{c.shareholder}</td>
                 <td className="px-4 py-2.5 text-slate-500">{c.method}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-blue-600">{formatTHB(c.amount_thb)}</td>
+                <td className="px-4 py-2.5 text-right font-semibold text-blue-600">{format(c.amount_thb)}</td>
                 <td className="px-4 py-2.5 text-right text-slate-500">{c.amount_eur != null ? `€${c.amount_eur.toLocaleString()}` : '—'}</td>
                 <td className="px-4 py-2.5 text-slate-500 text-xs max-w-xs truncate">{c.notes}</td>
                 <td className="px-4 py-2.5">

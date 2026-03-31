@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatTHB, SHAREHOLDERS } from '@/types'
+import { SHAREHOLDERS } from '@/types'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { ShareholderWork } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -12,6 +13,7 @@ import StatCard from '@/components/StatCard'
 const EMPTY: Partial<ShareholderWork> = { month: '', shareholder: '', hours: 0, hour_rate: 200 }
 
 export default function WorkClient({ initialWork }: { initialWork: ShareholderWork[] }) {
+  const { format } = useCurrency()
   const [work, setWork] = useState<ShareholderWork[]>(initialWork)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ShareholderWork | null>(null)
@@ -73,10 +75,10 @@ export default function WorkClient({ initialWork }: { initialWork: ShareholderWo
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {perShareholder.map(({ name, totalHours, totalTHB }) => (
-          <StatCard key={name} label={name.split(' ')[0]} value={formatTHB(totalTHB)} sub={`${totalHours} hrs`} color="blue" />
+          <StatCard key={name} label={name.split(' ')[0]} value={format(totalTHB)} sub={`${totalHours} hrs`} color="blue" />
         ))}
       </div>
-      <div className="mb-6"><StatCard label="Grand Total" value={formatTHB(grandTotalTHB)} color="blue" /></div>
+      <div className="mb-6"><StatCard label="Grand Total" value={format(grandTotalTHB)} color="blue" /></div>
 
       <div className="space-y-4">
         {byMonth.map(([monthKey, records]) => {
@@ -87,7 +89,7 @@ export default function WorkClient({ initialWork }: { initialWork: ShareholderWo
             <div key={monthKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
                 <h3 className="font-semibold text-slate-700">{label}</h3>
-                <span className="text-sm font-medium text-blue-600">{formatTHB(monthTotal)}</span>
+                <span className="text-sm font-medium text-blue-600">{format(monthTotal)}</span>
               </div>
               <table className="w-full text-sm">
                 <thead className="text-slate-500 border-b border-slate-100">
@@ -105,7 +107,7 @@ export default function WorkClient({ initialWork }: { initialWork: ShareholderWo
                       <td className="px-4 py-2.5 font-medium">{w.shareholder}</td>
                       <td className="px-4 py-2.5 text-right">{w.hours}</td>
                       <td className="px-4 py-2.5 text-right text-slate-500">{w.hour_rate}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold">{formatTHB((w.hours ?? 0) * (w.hour_rate ?? 200))}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold">{format((w.hours ?? 0) * (w.hour_rate ?? 200))}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex gap-2 justify-end">
                           <button onClick={() => openEdit(w)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
@@ -134,7 +136,7 @@ export default function WorkClient({ initialWork }: { initialWork: ShareholderWo
             <div><label className="label">Rate (THB/hr)</label><input type="number" className="input" value={form.hour_rate ?? 200} onChange={e => setForm(f => ({ ...f, hour_rate: +e.target.value }))} /></div>
             {form.hours != null && form.hour_rate != null && (
               <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-                Total: <strong>{formatTHB(form.hours * form.hour_rate)}</strong>
+                Total: <strong>{format(form.hours * form.hour_rate)}</strong>
               </div>
             )}
           </div>
