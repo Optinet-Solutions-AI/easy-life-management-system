@@ -115,16 +115,16 @@ export default function Sidebar() {
         <button onClick={() => setOpen(true)} className="text-slate-300 hover:text-white p-1">
           <Menu size={22} />
         </button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="text-xs text-slate-400 leading-none">Easy Life</p>
-          <p className="text-sm font-bold text-white leading-tight">Management Board</p>
+          <p className="text-sm font-bold text-white leading-tight truncate">Management Board</p>
         </div>
         <button
           onClick={toggle}
-          className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs font-medium"
+          className="shrink-0 flex items-center bg-slate-700 border border-slate-500 rounded-lg p-0.5 text-xs font-medium"
         >
-          <span className={`px-2 py-1 rounded-md transition-colors ${currency === 'THB' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>฿</span>
-          <span className={`px-2 py-1 rounded-md transition-colors ${currency === 'EUR' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>€</span>
+          <span className={`px-2.5 py-1 rounded-md transition-colors ${currency === 'THB' ? 'bg-blue-600 text-white' : 'text-slate-300'}`}>฿</span>
+          <span className={`px-2.5 py-1 rounded-md transition-colors ${currency === 'EUR' ? 'bg-blue-600 text-white' : 'text-slate-300'}`}>€</span>
         </button>
       </div>
 
