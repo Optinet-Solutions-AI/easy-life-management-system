@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader'
 import StatCard from '@/components/StatCard'
 
 interface BankBalance { id: string; label: string; amount: number; status?: string | null }
-interface GuestRow { room: string; guest_name: string; check_in: string; check_out: string; amount_thb_stay: number | null; payment: number | null }
+interface GuestRow { id: string; room: string; guest_name: string; check_in: string; check_out: string; amount_thb_stay: number | null; payment: number | null }
 
 interface Props {
   totalExpenses: number
@@ -75,7 +75,7 @@ export default function DashboardClient({
                     {currentGuests.map(g => {
                       const balance = (g.amount_thb_stay ?? 0) - (g.payment ?? 0)
                       return (
-                        <tr key={`${g.room}-${g.guest_name}`}>
+                        <tr key={g.id}>
                           <td className="px-3 py-2 font-medium">#{g.room}</td>
                           <td className="px-3 py-2">{g.guest_name}</td>
                           <td className="px-3 py-2 text-slate-500 hidden sm:table-cell">
@@ -115,7 +115,7 @@ export default function DashboardClient({
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {upcomingGuests.map(g => (
-                      <tr key={`${g.room}-${g.guest_name}`}>
+                      <tr key={g.id}>
                         <td className="px-3 py-2 font-medium">#{g.room}</td>
                         <td className="px-3 py-2">{g.guest_name}</td>
                         <td className="px-3 py-2 text-slate-500">

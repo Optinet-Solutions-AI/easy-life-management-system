@@ -8,7 +8,7 @@ export default async function DashboardPage() {
     supabase.from('founding_contributions').select('amount_thb'),
     supabase.from('bank_balances').select('*').order('recorded_date', { ascending: false }).limit(5),
     supabase.from('todos').select('status'),
-    supabase.from('guests').select('check_in, check_out, room, guest_name, amount_thb_stay, payment').order('check_in', { ascending: true }),
+    supabase.from('guests').select('id, check_in, check_out, room, guest_name, amount_thb_stay, payment').order('check_in', { ascending: true }),
   ])
 
   const totalExpenses = (expensesRes.data ?? []).reduce((s, r) => s + Math.abs(r.amount ?? 0), 0)
