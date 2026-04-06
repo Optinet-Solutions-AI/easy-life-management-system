@@ -17,12 +17,16 @@ import {
   Menu,
   X,
   LogOut,
+  BarChart3,
+  Gauge,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import type { SessionUser } from '@/lib/auth'
 
 const nav = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/shareholder-dashboard', label: 'Shareholder', icon: BarChart3 },
+  { href: '/operations-dashboard', label: 'GM Dashboard', icon: Gauge },
   { href: '/guests', label: 'Guests', icon: Users },
   { href: '/occupancy', label: 'Occupancy', icon: CalendarDays },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
