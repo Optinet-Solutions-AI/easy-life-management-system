@@ -8,7 +8,7 @@ import type { Todo } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 
-const EMPTY: Partial<Todo> = { project: 'EasyLife', department: '', topic: '', responsible_person: '', status_notes: '', target_date: '', status: 'Pending' }
+const EMPTY: Partial<Todo> = { project: 'DMS', department: '', topic: '', responsible_person: '', status_notes: '', target_date: '', status: 'Pending' }
 
 const STATUS_STYLES: Record<string, string> = {
   Complete: 'bg-green-100 text-green-700',

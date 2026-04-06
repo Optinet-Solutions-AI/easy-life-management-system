@@ -61,8 +61,8 @@ function NavLinks({ onNav }: { onNav?: () => void }) {
 function SidebarHeader() {
   return (
     <div className="px-5 py-5 border-b border-slate-700 shrink-0">
-      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Easy Life</p>
-      <h1 className="text-base font-bold text-white mt-0.5">Management Board</h1>
+      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Dream-T</p>
+      <h1 className="text-base font-bold text-white mt-0.5">Management System</h1>
     </div>
   )
 }
@@ -89,7 +89,7 @@ function SidebarFooter() {
   return (
     <div className="px-3 py-4 border-t border-slate-700 shrink-0 space-y-3">
       <CurrencyToggle />
-      <p className="text-xs text-slate-500 px-2">DreamT-CO © 2026</p>
+      <p className="text-xs text-slate-500 px-2">Dream-T © 2026</p>
     </div>
   )
 }
@@ -116,8 +116,8 @@ export default function Sidebar() {
           <Menu size={22} />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-slate-400 leading-none">Easy Life</p>
-          <p className="text-sm font-bold text-white leading-tight truncate">Management Board</p>
+          <p className="text-xs text-slate-400 leading-none">Dream-T</p>
+          <p className="text-sm font-bold text-white leading-tight truncate">DMS</p>
         </div>
         <button
           onClick={toggle}
@@ -140,8 +140,8 @@ export default function Sidebar() {
       <aside className={`lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-slate-900 text-slate-100 flex flex-col transform transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Easy Life</p>
-            <h1 className="text-base font-bold text-white mt-0.5">Management Board</h1>
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Dream-T</p>
+            <h1 className="text-base font-bold text-white mt-0.5">Management System</h1>
           </div>
           <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-white p-1">
             <X size={20} />

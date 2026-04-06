@@ -7,8 +7,8 @@ import Providers from "@/components/Providers";
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Easy Life Management System",
-  description: "Property management dashboard for Easy Life / DreamT-CO",
+  title: "Dream-T Management System",
+  description: "Property management platform for Dream-T Management System (DMS)",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

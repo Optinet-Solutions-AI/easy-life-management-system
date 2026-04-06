@@ -26,7 +26,7 @@ export default function DashboardClient({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <PageHeader title="Dashboard" subtitle="Status of Account" />
+      <PageHeader title="Dashboard" subtitle="Dream-T Management System" />
 
       {/* Financial Summary */}
       <section className="mb-6">
