@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import {
   LayoutDashboard,
@@ -16,8 +16,10 @@ import {
   ChevronRight,
   Menu,
   X,
+  LogOut,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
+import type { SessionUser } from '@/lib/auth'
 
 const nav = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -85,28 +87,56 @@ function CurrencyToggle() {
   )
 }
 
-function SidebarFooter() {
+function UserFooter({ user }: { user?: SessionUser }) {
+  const router = useRouter()
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+    router.refresh()
+  }
+
   return (
     <div className="px-3 py-4 border-t border-slate-700 shrink-0 space-y-3">
       <CurrencyToggle />
-      <p className="text-xs text-slate-500 px-2">Dream-T © 2026</p>
+      {user && (
+        <div className="flex items-center justify-between px-1">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-white truncate">{user.display_name}</p>
+            <p className="text-xs text-slate-500 truncate">{user.role}</p>
+          </div>
+          <button
+            onClick={logout}
+            title="Sign out"
+            className="ml-2 shrink-0 text-slate-500 hover:text-red-400 transition-colors p-1"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
+      )}
+      <p className="text-xs text-slate-600 px-1">Dream-T © 2026</p>
     </div>
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ user }: { user?: SessionUser }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const { currency, toggle } = useCurrency()
+  const router = useRouter()
 
-  // Close drawer on route change
   useEffect(() => { setOpen(false) }, [pathname])
 
-  // Lock body scroll when drawer open
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [open])
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <>
@@ -126,14 +156,16 @@ export default function Sidebar() {
           <span className={`px-2.5 py-1 rounded-md transition-colors ${currency === 'THB' ? 'bg-blue-600 text-white' : 'text-slate-300'}`}>฿</span>
           <span className={`px-2.5 py-1 rounded-md transition-colors ${currency === 'EUR' ? 'bg-blue-600 text-white' : 'text-slate-300'}`}>€</span>
         </button>
+        {user && (
+          <button onClick={logout} title="Sign out" className="shrink-0 text-slate-400 hover:text-red-400 transition-colors p-1">
+            <LogOut size={18} />
+          </button>
+        )}
       </div>
 
       {/* Mobile drawer backdrop */}
       {open && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/60"
-          onClick={() => setOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/60" onClick={() => setOpen(false)} />
       )}
 
       {/* Mobile drawer */}
@@ -148,14 +180,14 @@ export default function Sidebar() {
           </button>
         </div>
         <NavLinks onNav={() => setOpen(false)} />
-        <SidebarFooter />
+        <UserFooter user={user} />
       </aside>
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-56 shrink-0 bg-slate-900 text-slate-100 flex-col h-full">
         <SidebarHeader />
         <NavLinks />
-        <SidebarFooter />
+        <UserFooter user={user} />
       </aside>
     </>
   )

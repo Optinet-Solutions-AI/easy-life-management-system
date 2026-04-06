@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(mkdir -p \"app/\\(app\\)\")",
+      "Bash(mv \"app/page.tsx\" \"app/\\(app\\)/page.tsx\")",
+      "Bash(mv \"app/DashboardClient.tsx\" \"app/\\(app\\)/DashboardClient.tsx\")",
+      "Bash(mv \"app/guests\" \"app/\\(app\\)/guests\")",
+      "Bash(mv \"app/expenses\" \"app/\\(app\\)/expenses\")",
+      "Bash(npm run:*)",
+      "Bash(node -e ':*)"
+    ]
+  }
+}
