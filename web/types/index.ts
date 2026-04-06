@@ -120,6 +120,16 @@ export interface BudgetRent {
   vat_amount: number | null
 }
 
+export interface BudgetRoomSetup {
+  id: string
+  year: number
+  room_name: string
+  high_season_rate_thb: number | null
+  low_season_rate_thb: number | null
+  target_occupancy_pct: number | null
+  notes: string | null
+}
+
 export interface BankBalance {
   id: string
   label: string
