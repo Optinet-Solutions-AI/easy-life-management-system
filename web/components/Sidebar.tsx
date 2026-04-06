@@ -22,6 +22,7 @@ import {
   UserCircle2,
   CalendarRange,
   Clock,
+  RotateCcw,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import type { SessionUser } from '@/lib/auth'
@@ -80,20 +81,47 @@ function SidebarHeader() {
 }
 
 function CurrencyToggle() {
-  const { currency, toggle } = useCurrency()
+  const { currency, toggle, rate, rateSource, rateFetchedAt, refreshRate, refreshing } = useCurrency()
+  const isLive = rateSource && rateSource !== 'fallback' && rateSource !== 'seed'
+
+  const lastChecked = rateFetchedAt
+    ? new Date(rateFetchedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : null
+
   return (
-    <button
-      onClick={toggle}
-      className="flex w-full items-center bg-slate-800 hover:bg-slate-700 rounded-lg p-1 text-xs font-medium transition-colors"
-      title="Toggle currency"
-    >
-      <span className={`flex-1 text-center py-1 rounded-md transition-colors ${currency === 'THB' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
-        ฿ THB
-      </span>
-      <span className={`flex-1 text-center py-1 rounded-md transition-colors ${currency === 'EUR' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
-        € EUR
-      </span>
-    </button>
+    <div className="space-y-1.5">
+      <button
+        onClick={toggle}
+        className="flex w-full items-center bg-slate-800 hover:bg-slate-700 rounded-lg p-1 text-xs font-medium transition-colors"
+        title={`Toggle currency — 1 EUR = ${rate.toFixed(2)} THB`}
+      >
+        <span className={`flex-1 text-center py-1 rounded-md transition-colors ${currency === 'THB' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
+          ฿ THB
+        </span>
+        <span className={`flex-1 text-center py-1 rounded-md transition-colors ${currency === 'EUR' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
+          € EUR
+        </span>
+      </button>
+      <div className="flex items-center justify-between px-0.5">
+        <span className="text-xs text-slate-600">
+          1 EUR = <span className="text-slate-400">{rate.toFixed(2)} THB</span>
+          {isLive && <span className="ml-1 text-green-600 text-[10px]">●</span>}
+        </span>
+        <div className="flex items-center gap-1">
+          {lastChecked && (
+            <span className="text-[10px] text-slate-600">{lastChecked}</span>
+          )}
+          <button
+            onClick={refreshRate}
+            disabled={refreshing}
+            title="Refresh exchange rate from ECB"
+            className="text-slate-500 hover:text-blue-400 disabled:opacity-40 transition-colors p-0.5"
+          >
+            <RotateCcw size={11} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
