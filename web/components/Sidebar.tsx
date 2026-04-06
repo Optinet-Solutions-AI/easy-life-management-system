@@ -19,6 +19,9 @@ import {
   LogOut,
   BarChart3,
   Gauge,
+  UserCircle2,
+  CalendarRange,
+  Clock,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import type { SessionUser } from '@/lib/auth'
@@ -35,6 +38,9 @@ const nav = [
   { href: '/shareholder-work', label: 'Shareholder Work', icon: Briefcase },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/budget', label: 'Budget', icon: PieChart },
+  { href: '/shareholder-profiles', label: 'SH Profiles', icon: UserCircle2 },
+  { href: '/shareholder-meetings', label: 'SH Meetings', icon: CalendarRange },
+  { href: '/staff-hours', label: 'Staff Hours', icon: Clock },
 ]
 
 function NavLinks({ onNav }: { onNav?: () => void }) {

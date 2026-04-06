@@ -143,6 +143,51 @@ export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', '
 
 export const ROOMS = Array.from({ length: 10 }, (_, i) => i + 1)
 
+export interface ShareholderProfile {
+  id: string
+  name: string
+  role: string
+  bio: string | null
+  ownership_pct: number | null
+  photo_url: string | null
+  email: string | null
+  phone: string | null
+  nationality: string | null
+  joined_date: string | null
+  created_at: string
+}
+
+export interface MeetingAttachment {
+  name: string
+  url: string
+}
+
+export interface ShareholderMeeting {
+  id: string
+  meeting_date: string
+  title: string
+  participants: string[]
+  agenda: string | null
+  decisions: string | null
+  action_items: string | null
+  attachments: MeetingAttachment[]
+  created_at: string
+}
+
+export interface StaffHour {
+  id: string
+  staff_name: string
+  role: string | null
+  department: string | null
+  date: string
+  hours: number
+  hourly_rate_thb: number | null
+  notes: string | null
+  created_at: string
+}
+
+export const STAFF_DEPARTMENTS = ['Operations', 'Housekeeping', 'Reception', 'Maintenance', 'Kitchen', 'Management', 'Other']
+
 export function formatTHB(amount: number | null | undefined): string {
   if (amount == null) return '—'
   return new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 }).format(amount)
