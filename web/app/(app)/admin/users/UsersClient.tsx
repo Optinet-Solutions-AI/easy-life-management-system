@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { UserCog, Plus, KeyRound, Trash2, ShieldCheck } from 'lucide-react'
+import { Plus, KeyRound, Trash2, ShieldCheck } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 
@@ -137,8 +137,7 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
       <PageHeader
         title="User Management"
         subtitle={`${users.length} user${users.length !== 1 ? 's' : ''}`}
-        icon={<UserCog size={22} />}
-        actions={
+        action={
           <button
             onClick={() => { setShowAdd(true); setAddError(null); setAddForm(EMPTY_ADD) }}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"

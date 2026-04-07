@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { KeyRound, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 
 export default function ChangePasswordClient() {
@@ -67,7 +67,6 @@ export default function ChangePasswordClient() {
       <PageHeader
         title="Change Password"
         subtitle="Update your login password"
-        icon={<KeyRound size={22} />}
       />
 
       <form onSubmit={handleSubmit} className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
