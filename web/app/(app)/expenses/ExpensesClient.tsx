@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef } from 'react'
-import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, SHAREHOLDERS } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
@@ -35,6 +35,8 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   const [ocrError, setOcrError] = useState<string | null>(null)
   const [ocrFields, setOcrFields] = useState<Set<string>>(new Set())
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewName, setPreviewName] = useState<string | null>(null)
+  const [previewIsPdf, setPreviewIsPdf] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const PAGE_SIZE = 50
@@ -59,12 +61,12 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
 
   const openNew = () => {
     setEditing(null); setForm(EMPTY)
-    setOcrFields(new Set()); setOcrError(null); setPreviewUrl(null)
+    setOcrFields(new Set()); setOcrError(null); setPreviewUrl(null); setPreviewName(null); setPreviewIsPdf(false)
     setOpen(true)
   }
   const openEdit = (e: Expense) => {
     setEditing(e); setForm(e)
-    setOcrFields(new Set()); setOcrError(null); setPreviewUrl(null)
+    setOcrFields(new Set()); setOcrError(null); setPreviewUrl(null); setPreviewName(null); setPreviewIsPdf(false)
     setOpen(true)
   }
 
@@ -74,9 +76,16 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
     e.target.value = ''
 
     // Show preview
-    const reader = new FileReader()
-    reader.onload = ev => setPreviewUrl(ev.target?.result as string)
-    reader.readAsDataURL(file)
+    const isPdf = file.type === 'application/pdf'
+    setPreviewIsPdf(isPdf)
+    setPreviewName(file.name)
+    if (!isPdf) {
+      const reader = new FileReader()
+      reader.onload = ev => setPreviewUrl(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setPreviewUrl('pdf')
+    }
 
     setOcrLoading(true)
     setOcrError(null)
@@ -132,7 +141,8 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   }
 
   function clearOcr() {
-    setPreviewUrl(null); setOcrFields(new Set()); setOcrError(null)
+    setPreviewUrl(null); setPreviewName(null); setPreviewIsPdf(false)
+    setOcrFields(new Set()); setOcrError(null)
   }
 
   async function save() {
@@ -287,8 +297,18 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
                 </button>
               ) : (
                 <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={previewUrl} alt="Invoice preview" className="max-h-48 w-full object-contain" />
+                  {previewIsPdf ? (
+                    <div className="flex items-center gap-3 px-4 py-5">
+                      <FileText size={32} className="text-red-500 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-700 truncate">{previewName}</p>
+                        <p className="text-xs text-slate-400">PDF document</p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={previewUrl!} alt="Invoice preview" className="max-h-48 w-full object-contain" />
+                  )}
                   <button
                     type="button"
                     onClick={clearOcr}
