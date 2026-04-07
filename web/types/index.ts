@@ -39,8 +39,14 @@ export interface Expense {
   type: string | null
   description: string | null
   is_legal: boolean
+  legal_status: string | null
+  legal_notes: string | null
+  legal_reviewed_at: string | null
   created_at: string
 }
+
+export const LEGAL_STATUSES = ['Pending', 'Accepted', 'Clarification Needed', 'Rejected'] as const
+export type LegalStatus = typeof LEGAL_STATUSES[number]
 
 export interface Revenue {
   id: string

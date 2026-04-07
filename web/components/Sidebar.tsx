@@ -23,6 +23,7 @@ import {
   CalendarRange,
   Clock,
   RotateCcw,
+  Scale,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import type { SessionUser } from '@/lib/auth'
@@ -42,6 +43,7 @@ const nav = [
   { href: '/shareholder-profiles', label: 'SH Profiles', icon: UserCircle2 },
   { href: '/shareholder-meetings', label: 'SH Meetings', icon: CalendarRange },
   { href: '/staff-hours', label: 'Staff Hours', icon: Clock },
+  { href: '/legal', label: 'Legal', icon: Scale },
 ]
 
 function NavLinks({ onNav }: { onNav?: () => void }) {

@@ -43,6 +43,9 @@ create table if not exists expenses (
   type text,
   description text,
   is_legal boolean default false,
+  legal_status text default 'Pending',
+  legal_notes text,
+  legal_reviewed_at date,
   created_at timestamptz default now()
 );
 
