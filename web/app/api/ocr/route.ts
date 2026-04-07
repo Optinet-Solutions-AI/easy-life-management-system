@@ -56,8 +56,7 @@ export async function POST(request: NextRequest) {
             ],
           }],
           generationConfig: {
-            response_mime_type: 'application/json',
-            max_output_tokens: 1024,
+            max_output_tokens: 2048,
           },
         }),
       }
@@ -72,8 +71,13 @@ export async function POST(request: NextRequest) {
     const raw = json.candidates?.[0]?.content?.parts?.[0]?.text
     if (!raw) throw new Error('Empty response from Gemini')
 
-    // Strip markdown code fences if present (gemini-2.5 sometimes adds them)
-    const content = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+    // Extract the JSON object robustly — handles markdown fences, preamble text, etc.
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
+    if (start === -1 || end === -1 || end < start) {
+      throw new Error('No JSON object found in Gemini response')
+    }
+    const content = raw.slice(start, end + 1)
 
     const data = JSON.parse(content) as OcrResult
     return NextResponse.json({ ok: true, data })
