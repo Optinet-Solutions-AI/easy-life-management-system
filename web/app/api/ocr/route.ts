@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
           }],
           generationConfig: {
             response_mime_type: 'application/json',
-            max_output_tokens: 512,
+            max_output_tokens: 1024,
           },
         }),
       }
@@ -69,8 +69,11 @@ export async function POST(request: NextRequest) {
     }
 
     const json = await res.json()
-    const content = json.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!content) throw new Error('Empty response from Gemini')
+    const raw = json.candidates?.[0]?.content?.parts?.[0]?.text
+    if (!raw) throw new Error('Empty response from Gemini')
+
+    // Strip markdown code fences if present (gemini-2.5 sometimes adds them)
+    const content = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
 
     const data = JSON.parse(content) as OcrResult
     return NextResponse.json({ ok: true, data })
