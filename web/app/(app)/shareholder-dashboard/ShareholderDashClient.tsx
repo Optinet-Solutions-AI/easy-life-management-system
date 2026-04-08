@@ -7,14 +7,20 @@ import StatCard from '@/components/StatCard'
 
 const TOTAL_ROOMS = 10
 
+const OPEX_ORDER = [
+  'Staff Costs', 'Rooms Department', 'Utilities', 'Maintenance & Repairs',
+  'General & Admin', 'Insurance & Licenses', 'Rent / Lease', 'Financial Costs',
+  'Sales & Marketing', 'Travel',
+]
+
 type Tab = 'financial' | 'funding' | 'budget' | 'kpis' | 'costs' | 'forecast' | 'profiles'
 
-interface ExpenseRow { category: string | null; amount: number | null; payment_date: string | null }
+interface ExpenseRow { category: string | null; amount: number | null; currency?: string; payment_date: string | null }
 interface RevenueRow { amount_thb: number | null; date: string }
 interface ContributionRow { shareholder: string; amount_thb: number | null; amount_eur: number | null }
-interface BankRow { id: string; label: string; amount: number; status?: string | null }
+interface AccountRow { id: string; account_type: string; amount: number; notes?: string | null; updated_at?: string | null }
 interface BudgetRevRow { year: number; month: number; room_name: string; amount_thb: number }
-interface BudgetExpRow { year: number; month: number; category: string; amount_thb: number; expense_type: string }
+interface BudgetExpRow { year: number; month: number; category: string; item_name: string; amount_thb: number; expense_type: string }
 interface GuestRow { check_in: string; check_out: string; amount_thb_stay: number | null; payment: number | null; room: number; guest_name: string }
 interface ShareholderRow { id: string; name: string; share_percentage: number | null; amount_to_found_thb: number | null }
 
@@ -22,7 +28,7 @@ interface Props {
   expenses: ExpenseRow[]
   revenues: RevenueRow[]
   contributions: ContributionRow[]
-  bankBalances: BankRow[]
+  accountBalances: AccountRow[]
   budgetRevenue: BudgetRevRow[]
   budgetExpenses: BudgetExpRow[]
   guests: GuestRow[]
@@ -38,13 +44,16 @@ function Bar({ pct, color = 'bg-blue-500' }: { pct: number; color?: string }) {
   )
 }
 
-function Avatar({ name }: { name: string }) {
-  const parts = name.trim().split(' ')
-  const initials = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2)
+function VarCell({ budget, actual, invertGood = false }: { budget: number; actual: number; invertGood?: boolean }) {
+  if (budget === 0 && actual === 0) return <td className="px-3 py-2 text-right text-slate-300 text-xs">—</td>
+  const diff = actual - budget
+  const pct = budget !== 0 ? (diff / budget) * 100 : null
+  const isGood = invertGood ? diff <= 0 : diff >= 0
   return (
-    <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl shrink-0">
-      {initials.toUpperCase()}
-    </div>
+    <td className={`px-3 py-2 text-right text-xs font-medium ${isGood ? 'text-green-600' : 'text-red-500'}`}>
+      {diff >= 0 ? '+' : ''}{Math.round(diff).toLocaleString()}
+      {pct !== null && <span className="ml-1 opacity-60">({pct >= 0 ? '+' : ''}{pct.toFixed(1)}%)</span>}
+    </td>
   )
 }
 
@@ -58,7 +67,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'profiles', label: 'Shareholder Profiles' },
 ]
 
-export default function ShareholderDashClient({ expenses, revenues, contributions, bankBalances, budgetRevenue, budgetExpenses, guests, shareholders, currentYear }: Props) {
+export default function ShareholderDashClient({ expenses, revenues, contributions, accountBalances, budgetRevenue, budgetExpenses, guests, shareholders, currentYear }: Props) {
   const [tab, setTab] = useState<Tab>('financial')
   const { format } = useCurrency()
 
@@ -69,7 +78,7 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
   const totalRevenue = useMemo(() => revenues.reduce((s, r) => s + (r.amount_thb ?? 0), 0), [revenues])
   const totalExpenses = useMemo(() => expenses.reduce((s, e) => s + Math.abs(e.amount ?? 0), 0), [expenses])
   const totalFounded = useMemo(() => contributions.reduce((s, c) => s + (c.amount_thb ?? 0), 0), [contributions])
-  const bankTotal = useMemo(() => bankBalances.reduce((s, b) => s + b.amount, 0), [bankBalances])
+  const accountTotal = useMemo(() => accountBalances.reduce((s, b) => s + b.amount, 0), [accountBalances])
   const netPosition = totalRevenue + totalFounded - totalExpenses
 
   const monthlyRevExp = useMemo(() => MONTHS.map((label, mi) => ({
@@ -87,14 +96,65 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
     return { name, total, agreed: shData?.amount_to_found_thb ?? 0, pct: shData?.share_percentage ?? 25 }
   }), [contributions, shareholders])
 
-  // ── Budget vs Actual ──
-  const budgetVsActual = useMemo(() => MONTHS.map((label, mi) => {
-    const budRev = budgetRevenue.filter(r => r.month === mi + 1).reduce((s, r) => s + r.amount_thb, 0)
-    const budExp = budgetExpenses.filter(e => e.month === mi + 1).reduce((s, e) => s + e.amount_thb, 0)
-    const actRev = revenues.filter(r => r.date && new Date(r.date).getFullYear() === currentYear && new Date(r.date).getMonth() === mi).reduce((s, r) => s + (r.amount_thb ?? 0), 0)
-    const actExp = expenses.filter(e => e.payment_date && new Date(e.payment_date).getFullYear() === currentYear && new Date(e.payment_date).getMonth() === mi).reduce((s, e) => s + Math.abs(e.amount ?? 0), 0)
-    return { label, budRev, budExp, actRev, actExp, varRev: actRev - budRev, varExp: actExp - budExp }
-  }), [budgetRevenue, budgetExpenses, revenues, expenses, currentYear])
+  // ── Budget vs Actual (P&L) ──
+  const yearRevenue = budgetRevenue.filter(r => r.year === currentYear)
+  const yearExpenses = budgetExpenses.filter(e => e.year === currentYear)
+
+  const actRevYear = useMemo(() => revenues.filter(r => r.date && new Date(r.date).getFullYear() === currentYear).reduce((s, r) => s + (r.amount_thb ?? 0), 0), [revenues, currentYear])
+
+  const actExpByCategory = useMemo(() => {
+    const map: Record<string, number> = {}
+    expenses.forEach(e => {
+      if (!e.payment_date) return
+      const d = new Date(e.payment_date)
+      if (d.getFullYear() !== currentYear) return
+      const cat = e.category ?? 'Uncategorized'
+      const amt = Math.abs(e.amount ?? 0) * ((e.currency === 'EUR') ? 37 : 1)
+      map[cat] = (map[cat] ?? 0) + amt
+    })
+    return map
+  }, [expenses, currentYear])
+
+  const plData = useMemo(() => {
+    // Revenue by room
+    const rooms = [...new Set(yearRevenue.map(r => r.room_name))].sort()
+    const revenueRows = rooms.map(room => ({
+      name: room,
+      budget: yearRevenue.filter(r => r.room_name === room).reduce((s, r) => s + r.amount_thb, 0),
+    }))
+    const budTotalRev = revenueRows.reduce((s, r) => s + r.budget, 0)
+
+    // OPEX categories (ordered)
+    const presentOpex = OPEX_ORDER.filter(cat => yearExpenses.some(e => e.expense_type === 'OPEX' && e.category === cat))
+    const extraOpex = [...new Set(yearExpenses.filter(e => e.expense_type === 'OPEX').map(e => e.category))].filter(c => !OPEX_ORDER.includes(c))
+    const opexCategories = [...presentOpex, ...extraOpex]
+
+    const opexRows = opexCategories.map(cat => ({
+      category: cat,
+      budget: yearExpenses.filter(e => e.expense_type === 'OPEX' && e.category === cat).reduce((s, e) => s + e.amount_thb, 0),
+      actual: actExpByCategory[cat] ?? 0,
+    }))
+    const budTotalOpex = opexRows.reduce((s, r) => s + r.budget, 0)
+    const actTotalOpex = opexRows.reduce((s, r) => s + r.actual, 0)
+
+    // CAPEX items
+    const capexItems = [...new Set(yearExpenses.filter(e => e.expense_type === 'CAPEX').map(e => e.item_name))]
+    const capexRows = capexItems.map(item => ({
+      name: item,
+      budget: yearExpenses.filter(e => e.expense_type === 'CAPEX' && e.item_name === item).reduce((s, e) => s + e.amount_thb, 0),
+      actual: actExpByCategory[item] ?? 0,
+    }))
+    const budTotalCapex = capexRows.reduce((s, r) => s + r.budget, 0)
+    const actTotalCapex = capexRows.reduce((s, r) => s + r.actual, 0)
+
+    return {
+      revenueRows, budTotalRev, actTotalRev: actRevYear,
+      opexRows, budTotalOpex, actTotalOpex,
+      capexRows, budTotalCapex, actTotalCapex,
+      budNetResult: budTotalRev - budTotalOpex - budTotalCapex,
+      actNetResult: actRevYear - actTotalOpex - actTotalCapex,
+    }
+  }, [yearRevenue, yearExpenses, actExpByCategory, actRevYear])
 
   // ── Business KPIs (current month) ──
   const kpis = useMemo(() => {
@@ -148,8 +208,10 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
     const futureRevenue = futureGuests.reduce((s, g) => s + (g.amount_thb_stay ?? 0), 0)
     const remainingBudRev = budgetRevenue.filter(r => r.month > currentMonth + 1).reduce((s, r) => s + r.amount_thb, 0)
     const remainingBudExp = budgetExpenses.filter(e => e.month > currentMonth + 1).reduce((s, e) => s + e.amount_thb, 0)
-    return { futureRevenue, remainingBudRev, remainingBudExp, projectedCash: bankTotal + futureRevenue - remainingBudExp }
-  }, [guests, budgetRevenue, budgetExpenses, bankTotal, currentMonth])
+    return { futureRevenue, remainingBudRev, remainingBudExp, projectedCash: accountTotal + futureRevenue - remainingBudExp }
+  }, [guests, budgetRevenue, budgetExpenses, accountTotal, currentMonth])
+
+  const fmt = (n: number) => Math.round(n).toLocaleString()
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -175,7 +237,7 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
             <StatCard label="Total Revenue" value={format(totalRevenue)} color="green" />
             <StatCard label="Total Expenses" value={format(totalExpenses)} color="red" />
             <StatCard label="Net Position" value={format(netPosition)} color={netPosition >= 0 ? 'green' : 'red'} sub="Rev + Founded − Exp" />
-            <StatCard label="Bank Total" value={format(bankTotal)} color="blue" />
+            <StatCard label="Account Total" value={format(accountTotal)} color="blue" />
           </div>
 
           {/* Monthly chart */}
@@ -202,20 +264,24 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
             </div>
           </div>
 
-          {/* Bank balances */}
-          {bankBalances.length > 0 && (
+          {/* Account balances */}
+          {accountBalances.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
               <h3 className="text-sm font-semibold text-slate-700 mb-4">Account Balances</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {bankBalances.map(b => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {accountBalances.map(b => (
                   <div key={b.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <div>
-                      <p className="text-sm font-medium text-slate-700">{b.label}</p>
-                      {b.status && <p className="text-xs text-slate-400">{b.status}</p>}
+                      <p className="text-sm font-medium text-slate-700">{b.account_type}</p>
+                      {b.notes && <p className="text-xs text-slate-400">{b.notes}</p>}
                     </div>
                     <p className="font-semibold text-slate-900">{format(b.amount)}</p>
                   </div>
                 ))}
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg col-span-full sm:col-span-1">
+                  <p className="text-sm font-semibold text-blue-700">Total</p>
+                  <p className="font-bold text-blue-700">{format(accountTotal)}</p>
+                </div>
               </div>
             </div>
           )}
@@ -252,37 +318,124 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
         </div>
       )}
 
-      {/* ── Tab: Budget vs Actual ── */}
+      {/* ── Tab: Budget vs Actual (P&L) ── */}
       {tab === 'budget' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {/* KPI summary */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Budget Revenue" value={format(plData.budTotalRev)} color="default" sub={`${currentYear} plan`} />
+            <StatCard label="Actual Revenue" value={format(plData.actTotalRev)} color="green" />
+            <StatCard label="Budget OPEX" value={format(plData.budTotalOpex)} color="default" />
+            <StatCard label="Budget Net Result" value={format(plData.budNetResult)} color={plData.budNetResult >= 0 ? 'green' : 'red'} />
+          </div>
+
+          {/* P&L table */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
-            <table className="w-full text-sm min-w-[700px]">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Month</th>
-                  <th className="text-right px-3 py-3 font-medium text-slate-600">Budget Rev</th>
-                  <th className="text-right px-3 py-3 font-medium text-slate-600">Actual Rev</th>
-                  <th className="text-right px-3 py-3 font-medium text-slate-600">Var Rev</th>
-                  <th className="text-right px-3 py-3 font-medium text-slate-600">Budget Exp</th>
-                  <th className="text-right px-3 py-3 font-medium text-slate-600">Actual Exp</th>
-                  <th className="text-right px-3 py-3 font-medium text-slate-600">Var Exp</th>
+            <table className="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr className="bg-slate-800 text-white">
+                  <th className="text-left px-4 py-3 font-semibold text-sm">Item</th>
+                  <th className="text-right px-3 py-3 font-semibold text-sm">Budget {currentYear}</th>
+                  <th className="text-right px-3 py-3 font-semibold text-sm">Actual YTD</th>
+                  <th className="text-right px-3 py-3 font-semibold text-sm">Variance</th>
+                  <th className="text-right px-4 py-3 font-semibold text-sm">Var %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {budgetVsActual.map(row => (
-                  <tr key={row.label} className="hover:bg-slate-50">
-                    <td className="px-4 py-2.5 font-medium">{row.label}</td>
-                    <td className="px-3 py-2.5 text-right text-slate-500 text-xs">{row.budRev > 0 ? format(row.budRev) : '—'}</td>
-                    <td className="px-3 py-2.5 text-right text-green-600 font-medium text-xs">{row.actRev > 0 ? format(row.actRev) : '—'}</td>
-                    <td className={`px-3 py-2.5 text-right text-xs font-medium ${row.varRev >= 0 ? 'text-green-600' : 'text-red-500'}`}>{row.budRev > 0 || row.actRev > 0 ? format(row.varRev) : '—'}</td>
-                    <td className="px-3 py-2.5 text-right text-slate-500 text-xs">{row.budExp > 0 ? format(row.budExp) : '—'}</td>
-                    <td className="px-3 py-2.5 text-right text-red-500 font-medium text-xs">{row.actExp > 0 ? format(row.actExp) : '—'}</td>
-                    <td className={`px-3 py-2.5 text-right text-xs font-medium ${row.varExp <= 0 ? 'text-green-600' : 'text-red-500'}`}>{row.budExp > 0 || row.actExp > 0 ? format(row.varExp) : '—'}</td>
+              <tbody>
+                {/* REVENUE section */}
+                <tr className="bg-green-50 border-t border-green-200">
+                  <td colSpan={5} className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-green-700">Revenue</td>
+                </tr>
+                {plData.revenueRows.map(r => (
+                  <tr key={r.name} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="px-4 py-2 text-slate-600 text-xs pl-7">{r.name}</td>
+                    <td className="px-3 py-2 text-right text-xs text-slate-600">{r.budget > 0 ? fmt(r.budget) : '—'}</td>
+                    <td className="px-3 py-2 text-right text-xs text-slate-400">—</td>
+                    <td className="px-3 py-2 text-right text-xs text-slate-400">—</td>
+                    <td className="px-4 py-2 text-right text-xs text-slate-400">—</td>
                   </tr>
                 ))}
+                <tr className="bg-green-50 border-t-2 border-green-300">
+                  <td className="px-4 py-2.5 font-bold text-green-800 text-sm pl-7">Total Revenue</td>
+                  <td className="px-3 py-2.5 text-right font-bold text-green-700">{fmt(plData.budTotalRev)}</td>
+                  <td className="px-3 py-2.5 text-right font-bold text-green-700">{fmt(plData.actTotalRev)}</td>
+                  <VarCell budget={plData.budTotalRev} actual={plData.actTotalRev} />
+                  {plData.budTotalRev > 0
+                    ? <td className={`px-4 py-2.5 text-right text-xs font-medium ${plData.actTotalRev >= plData.budTotalRev ? 'text-green-600' : 'text-red-500'}`}>
+                        {((plData.actTotalRev / plData.budTotalRev) * 100).toFixed(1)}%
+                      </td>
+                    : <td className="px-4 py-2.5 text-right text-xs text-slate-300">—</td>
+                  }
+                </tr>
+
+                {/* OPEX section */}
+                <tr className="bg-slate-100 border-t-2 border-slate-300">
+                  <td colSpan={5} className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">Operating Expenses (OPEX)</td>
+                </tr>
+                {plData.opexRows.map(r => (
+                  <tr key={r.category} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="px-4 py-2 text-slate-700 text-sm pl-7">{r.category}</td>
+                    <td className="px-3 py-2 text-right text-xs text-slate-600">{r.budget > 0 ? fmt(r.budget) : '—'}</td>
+                    <td className="px-3 py-2 text-right text-xs font-medium text-slate-800">{r.actual > 0 ? fmt(r.actual) : '—'}</td>
+                    <VarCell budget={r.budget} actual={r.actual} invertGood />
+                    {r.budget > 0
+                      ? <td className={`px-4 py-2 text-right text-xs font-medium ${r.actual <= r.budget ? 'text-green-600' : 'text-red-500'}`}>
+                          {((r.actual / r.budget) * 100).toFixed(1)}%
+                        </td>
+                      : <td className="px-4 py-2 text-right text-xs text-slate-300">—</td>
+                    }
+                  </tr>
+                ))}
+                <tr className="bg-slate-100 border-t-2 border-slate-400">
+                  <td className="px-4 py-2.5 font-bold text-slate-800 pl-7">Total OPEX</td>
+                  <td className="px-3 py-2.5 text-right font-bold text-slate-700">{fmt(plData.budTotalOpex)}</td>
+                  <td className="px-3 py-2.5 text-right font-bold text-slate-800">{plData.actTotalOpex > 0 ? fmt(plData.actTotalOpex) : '—'}</td>
+                  <VarCell budget={plData.budTotalOpex} actual={plData.actTotalOpex} invertGood />
+                  {plData.budTotalOpex > 0
+                    ? <td className={`px-4 py-2.5 text-right text-xs font-medium ${plData.actTotalOpex <= plData.budTotalOpex ? 'text-green-600' : 'text-red-500'}`}>
+                        {((plData.actTotalOpex / plData.budTotalOpex) * 100).toFixed(1)}%
+                      </td>
+                    : <td className="px-4 py-2.5 text-right text-xs text-slate-300">—</td>
+                  }
+                </tr>
+
+                {/* CAPEX section */}
+                {plData.capexRows.length > 0 && (
+                  <>
+                    <tr className="bg-orange-50 border-t-2 border-orange-200">
+                      <td colSpan={5} className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-orange-700">Capital Expenses (CAPEX)</td>
+                    </tr>
+                    {plData.capexRows.map(r => (
+                      <tr key={r.name} className="border-t border-slate-100 hover:bg-slate-50">
+                        <td className="px-4 py-2 text-slate-700 text-xs pl-7">{r.name}</td>
+                        <td className="px-3 py-2 text-right text-xs text-slate-600">{r.budget > 0 ? fmt(r.budget) : '—'}</td>
+                        <td className="px-3 py-2 text-right text-xs text-slate-400">—</td>
+                        <td className="px-3 py-2 text-right text-xs text-slate-400">—</td>
+                        <td className="px-4 py-2 text-right text-xs text-slate-400">—</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-orange-50 border-t-2 border-orange-300">
+                      <td className="px-4 py-2.5 font-bold text-orange-800 pl-7">Total CAPEX</td>
+                      <td className="px-3 py-2.5 text-right font-bold text-orange-700">{fmt(plData.budTotalCapex)}</td>
+                      <td className="px-3 py-2.5 text-right font-bold text-slate-400">—</td>
+                      <td className="px-3 py-2.5 text-right text-xs text-slate-400">—</td>
+                      <td className="px-4 py-2.5 text-right text-xs text-slate-400">—</td>
+                    </tr>
+                  </>
+                )}
+
+                {/* Net Result */}
+                <tr className={`border-t-2 border-slate-500 ${plData.budNetResult >= 0 ? 'bg-green-100' : 'bg-red-50'}`}>
+                  <td className="px-4 py-3 font-bold text-slate-900 text-base">NET RESULT</td>
+                  <td className={`px-3 py-3 text-right font-bold ${plData.budNetResult >= 0 ? 'text-green-700' : 'text-red-600'}`}>{fmt(plData.budNetResult)}</td>
+                  <td className={`px-3 py-3 text-right font-bold ${plData.actNetResult >= 0 ? 'text-green-700' : 'text-red-600'}`}>{fmt(plData.actNetResult)}</td>
+                  <VarCell budget={plData.budNetResult} actual={plData.actNetResult} />
+                  <td className="px-4 py-3 text-right text-xs text-slate-400">—</td>
+                </tr>
               </tbody>
             </table>
           </div>
+          <p className="text-xs text-slate-400">Actual figures use year-to-date data. Actual by OPEX category matched against expense category names. CAPEX actuals not separately tracked.</p>
         </div>
       )}
 
@@ -357,7 +510,7 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
             <StatCard label="Future Confirmed Revenue" value={format(forecast.futureRevenue)} color="green" sub="From booked stays" />
             <StatCard label="Remaining Budget Revenue" value={format(forecast.remainingBudRev)} color="blue" sub="Budget plan" />
             <StatCard label="Remaining Budget Expenses" value={format(forecast.remainingBudExp)} color="red" sub="Budget plan" />
-            <StatCard label="Projected Cash Position" value={format(forecast.projectedCash)} color={forecast.projectedCash >= 0 ? 'green' : 'red'} sub="Bank + future rev − budget exp" />
+            <StatCard label="Projected Cash Position" value={format(forecast.projectedCash)} color={forecast.projectedCash >= 0 ? 'green' : 'red'} sub="Accounts + future rev − budget exp" />
           </div>
           <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Upcoming Bookings</h3>

@@ -9,7 +9,7 @@ export default async function BudgetPage() {
     supabase.from('budget_rent').select('*').order('year_number'),
     supabase.from('budget_room_setup').select('*').order('year').order('room_name'),
     supabase.from('revenue').select('amount_thb, date'),
-    supabase.from('expenses').select('amount, currency, payment_date'),
+    supabase.from('expenses').select('amount, currency, payment_date, category'),
   ])
 
   return (

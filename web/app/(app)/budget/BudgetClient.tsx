@@ -16,7 +16,7 @@ type InputSection = 'revenue' | 'expenses' | 'rent'
 type AnyForm = Record<string, any>
 
 interface ActualRevRow { amount_thb: number | null; date: string }
-interface ActualExpRow { amount: number | null; currency: string; payment_date: string | null }
+interface ActualExpRow { amount: number | null; currency: string; payment_date: string | null; category?: string | null }
 
 const ROOMS_LIST = [
   'Room 1 - Renovated - Single', 'Room 2 - Renovated - Single', 'Room 3 - Renovated - Single',
@@ -67,6 +67,7 @@ export default function BudgetClient({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<AnyForm>({})
   const [saving, setSaving] = useState(false)
+  const [controlView, setControlView] = useState<'monthly' | 'pnl'>('pnl')
 
   // ── Budget data for selected year ──────────────────────────────────────────
   const yearRevenue = revenue.filter(r => r.year === year)
@@ -111,6 +112,62 @@ export default function BudgetClient({
   const actTotalRev = actMonthlyRevenue.reduce((s, v) => s + v, 0)
   const actTotalExp = actMonthlyExp.reduce((s, v) => s + v, 0)
   const actTotalResult = actTotalRev - actTotalExp
+
+  // ── P&L breakdown data ─────────────────────────────────────────────────────
+  const OPEX_ORDER = [
+    'Staff Costs', 'Rooms Department', 'Utilities', 'Maintenance & Repairs',
+    'General & Admin', 'Insurance & Licenses', 'Rent / Lease', 'Financial Costs',
+    'Sales & Marketing', 'Travel',
+  ]
+
+  const actExpByCategory = useMemo(() => {
+    const map: Record<string, number> = {}
+    propActualExp.forEach(e => {
+      if (!e.payment_date) return
+      const d = new Date(e.payment_date)
+      if (d.getFullYear() !== year) return
+      const cat = e.category ?? 'Uncategorized'
+      const amt = Math.abs(e.amount ?? 0) * (e.currency === 'EUR' ? 37 : 1)
+      map[cat] = (map[cat] ?? 0) + amt
+    })
+    return map
+  }, [propActualExp, year])
+
+  const plData = useMemo(() => {
+    const rooms = [...new Set(yearRevenue.map(r => r.room_name))].sort()
+    const revenueRows = rooms.map(room => ({
+      name: room,
+      budget: yearRevenue.filter(r => r.room_name === room).reduce((s, r) => s + r.amount_thb, 0),
+    }))
+
+    const presentOpex = OPEX_ORDER.filter(cat => yearExpenses.some(e => e.expense_type === 'OPEX' && e.category === cat))
+    const extraOpex = [...new Set(yearExpenses.filter(e => e.expense_type === 'OPEX').map(e => e.category))].filter(c => !OPEX_ORDER.includes(c))
+    const opexCategories = [...presentOpex, ...extraOpex]
+
+    const opexRows = opexCategories.map(cat => ({
+      category: cat,
+      budget: yearExpenses.filter(e => e.expense_type === 'OPEX' && e.category === cat).reduce((s, e) => s + e.amount_thb, 0),
+      actual: actExpByCategory[cat] ?? 0,
+    }))
+    const budTotalOpexPl = opexRows.reduce((s, r) => s + r.budget, 0)
+    const actTotalOpexPl = opexRows.reduce((s, r) => s + r.actual, 0)
+
+    const capexItems = [...new Set(yearExpenses.filter(e => e.expense_type === 'CAPEX').map(e => e.item_name))]
+    const capexRows = capexItems.map(item => ({
+      name: item,
+      budget: yearExpenses.filter(e => e.expense_type === 'CAPEX' && e.item_name === item).reduce((s, e) => s + e.amount_thb, 0),
+    }))
+    const budTotalCapexPl = capexRows.reduce((s, r) => s + r.budget, 0)
+
+    return {
+      revenueRows,
+      budTotalRev: revenueRows.reduce((s, r) => s + r.budget, 0),
+      opexRows, budTotalOpexPl, actTotalOpexPl,
+      capexRows, budTotalCapexPl,
+    }
+  }, [yearRevenue, yearExpenses, actExpByCategory])
+
+  const fmt = (n: number) => Math.round(n).toLocaleString()
 
   // ── Save handlers ───────────────────────────────────────────────────────────
   async function saveRevenue() {
@@ -454,8 +511,115 @@ export default function BudgetClient({
             <StatCard label="Actual Result" value={format(actTotalResult)} color={actTotalResult >= 0 ? 'green' : 'red'} />
           </div>
 
+          {/* View toggle */}
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit mb-4">
+            <button onClick={() => setControlView('pnl')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${controlView === 'pnl' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>P&amp;L Breakdown</button>
+            <button onClick={() => setControlView('monthly')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${controlView === 'monthly' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>Monthly Summary</button>
+          </div>
+
+          {/* P&L Breakdown view */}
+          {controlView === 'pnl' && (
+            <div className="bg-white rounded-xl border border-slate-200 overflow-auto mb-4">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead>
+                  <tr className="bg-slate-800 text-white">
+                    <th className="text-left px-4 py-3 font-semibold">Item</th>
+                    <th className="text-right px-3 py-3 font-semibold">Budget {year}</th>
+                    <th className="text-right px-3 py-3 font-semibold">Actual YTD</th>
+                    <th className="text-right px-4 py-3 font-semibold">Variance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* REVENUE */}
+                  <tr className="bg-green-50 border-t border-green-200">
+                    <td colSpan={4} className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-green-700">Revenue</td>
+                  </tr>
+                  {plData.revenueRows.map(r => (
+                    <tr key={r.name} className="border-t border-slate-100 hover:bg-slate-50">
+                      <td className="px-4 py-2 text-slate-600 text-xs pl-8">{r.name}</td>
+                      <td className="px-3 py-2 text-right text-xs text-slate-600">{r.budget > 0 ? fmt(r.budget) : '—'}</td>
+                      <td className="px-3 py-2 text-right text-xs text-slate-400">—</td>
+                      <td className="px-4 py-2 text-right text-xs text-slate-400">—</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-green-50 border-t-2 border-green-300">
+                    <td className="px-4 py-2.5 font-bold text-green-800 pl-8">Total Revenue</td>
+                    <td className="px-3 py-2.5 text-right font-bold text-green-700">{fmt(plData.budTotalRev)}</td>
+                    <td className="px-3 py-2.5 text-right font-bold text-green-700">{fmt(actTotalRev)}</td>
+                    <td className={`px-4 py-2.5 text-right text-xs font-medium ${actTotalRev >= plData.budTotalRev ? 'text-green-600' : 'text-red-500'}`}>
+                      {actTotalRev - plData.budTotalRev >= 0 ? '+' : ''}{fmt(actTotalRev - plData.budTotalRev)}
+                    </td>
+                  </tr>
+
+                  {/* OPEX */}
+                  <tr className="bg-slate-100 border-t-2 border-slate-300">
+                    <td colSpan={4} className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">Operating Expenses (OPEX)</td>
+                  </tr>
+                  {plData.opexRows.map(r => (
+                    <tr key={r.category} className="border-t border-slate-100 hover:bg-slate-50">
+                      <td className="px-4 py-2 text-slate-700 text-sm pl-8">{r.category}</td>
+                      <td className="px-3 py-2 text-right text-xs text-slate-600">{r.budget > 0 ? fmt(r.budget) : '—'}</td>
+                      <td className="px-3 py-2 text-right text-xs font-medium text-slate-800">{r.actual > 0 ? fmt(r.actual) : '—'}</td>
+                      <td className={`px-4 py-2 text-right text-xs font-medium ${r.actual <= r.budget ? 'text-green-600' : r.actual === 0 ? 'text-slate-300' : 'text-red-500'}`}>
+                        {r.actual > 0 || r.budget > 0 ? `${r.actual - r.budget >= 0 ? '+' : ''}${fmt(r.actual - r.budget)}` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-slate-100 border-t-2 border-slate-400">
+                    <td className="px-4 py-2.5 font-bold text-slate-800 pl-8">Total OPEX</td>
+                    <td className="px-3 py-2.5 text-right font-bold text-slate-700">{fmt(plData.budTotalOpexPl)}</td>
+                    <td className="px-3 py-2.5 text-right font-bold text-slate-800">{plData.actTotalOpexPl > 0 ? fmt(plData.actTotalOpexPl) : '—'}</td>
+                    <td className={`px-4 py-2.5 text-right text-xs font-medium ${plData.actTotalOpexPl <= plData.budTotalOpexPl ? 'text-green-600' : 'text-red-500'}`}>
+                      {plData.actTotalOpexPl > 0 ? `${plData.actTotalOpexPl - plData.budTotalOpexPl >= 0 ? '+' : ''}${fmt(plData.actTotalOpexPl - plData.budTotalOpexPl)}` : '—'}
+                    </td>
+                  </tr>
+
+                  {/* CAPEX */}
+                  {plData.capexRows.length > 0 && (
+                    <>
+                      <tr className="bg-orange-50 border-t-2 border-orange-200">
+                        <td colSpan={4} className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-orange-700">Capital Expenses (CAPEX)</td>
+                      </tr>
+                      {plData.capexRows.map(r => (
+                        <tr key={r.name} className="border-t border-slate-100 hover:bg-slate-50">
+                          <td className="px-4 py-2 text-slate-700 text-xs pl-8">{r.name}</td>
+                          <td className="px-3 py-2 text-right text-xs text-slate-600">{r.budget > 0 ? fmt(r.budget) : '—'}</td>
+                          <td className="px-3 py-2 text-right text-xs text-slate-400">—</td>
+                          <td className="px-4 py-2 text-right text-xs text-slate-400">—</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-orange-50 border-t-2 border-orange-300">
+                        <td className="px-4 py-2.5 font-bold text-orange-800 pl-8">Total CAPEX</td>
+                        <td className="px-3 py-2.5 text-right font-bold text-orange-700">{fmt(plData.budTotalCapexPl)}</td>
+                        <td className="px-3 py-2.5 text-right text-slate-400">—</td>
+                        <td className="px-4 py-2.5 text-right text-slate-400">—</td>
+                      </tr>
+                    </>
+                  )}
+
+                  {/* Net Result */}
+                  {(() => {
+                    const budNet = plData.budTotalRev - plData.budTotalOpexPl - plData.budTotalCapexPl
+                    const actNet = actTotalRev - plData.actTotalOpexPl
+                    return (
+                      <tr className={`border-t-2 border-slate-500 ${budNet >= 0 ? 'bg-green-100' : 'bg-red-50'}`}>
+                        <td className="px-4 py-3 font-bold text-slate-900 text-base">NET RESULT</td>
+                        <td className={`px-3 py-3 text-right font-bold ${budNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>{fmt(budNet)}</td>
+                        <td className={`px-3 py-3 text-right font-bold ${actNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>{fmt(actNet)}</td>
+                        <td className={`px-4 py-3 text-right text-xs font-medium ${actNet >= budNet ? 'text-green-600' : 'text-red-500'}`}>
+                          {actNet - budNet >= 0 ? '+' : ''}{fmt(actNet - budNet)}
+                        </td>
+                      </tr>
+                    )
+                  })()}
+                </tbody>
+              </table>
+              <p className="px-4 py-2 text-xs text-slate-400 border-t border-slate-100">Actual OPEX matched by expense category name. CAPEX actuals not separately tracked. EUR expenses converted at 37 THB.</p>
+            </div>
+          )}
+
           {/* Monthly comparison table */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
+          {controlView === 'monthly' && <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-700">Budget vs Actual — {year}</p>
               <p className="text-xs text-slate-400">Expenses: actual amounts converted at 1 EUR = 37 THB</p>
@@ -515,7 +679,7 @@ export default function BudgetClient({
                 </tr>
               </tfoot>
             </table>
-          </div>
+          </div>}
         </>
       )}
 
