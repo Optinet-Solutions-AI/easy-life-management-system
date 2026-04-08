@@ -10,7 +10,11 @@
       "Bash(npm run:*)",
       "Bash(node -e ':*)",
       "Bash(grep -E \"\\(types|lib\\)$\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Read(//c/Users/Chris-Optinet/**)",
+      "Bash(python3 -c ':*)",
+      "Bash(cd /tmp)",
+      "Bash(node import-from-excel.js)"
     ]
   }
 }
