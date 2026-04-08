@@ -149,7 +149,7 @@ export const SHAREHOLDERS = ['Lorenzo PAGNAN', 'Stella MAROZZI', 'Bruce MIFSUD',
 
 export const EXPENSE_CATEGORIES = ['Rent', 'Legal', 'Staff', 'Utilities', 'Maintenance', 'Marketing', 'Operations', 'Other']
 
-export const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Revolute', 'Wise', 'Card', 'Other']
+export const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Revolute', 'Wise', 'Card', 'General Manager', 'Other']
 
 export const TODO_STATUSES = ['Pending', 'Ongoing', 'Complete', 'Blocked']
 
