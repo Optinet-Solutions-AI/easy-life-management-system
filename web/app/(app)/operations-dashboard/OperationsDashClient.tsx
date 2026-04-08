@@ -153,7 +153,7 @@ export default function OperationsDashClient({ guests, todos, revenues, accountB
             <StatCard label="Check-ins Today" value={`${todayOps.checkIns.length}`} color="green" />
             <StatCard label="Check-outs Today" value={`${todayOps.checkOuts.length}`} color="yellow" />
             <StatCard label="In-House" value={`${todayOps.inHouse.length}`} color="blue" sub={`${TOTAL_ROOMS} total rooms`} />
-            <StatCard label="Available" value={`${todayOps.available}`} color={todayOps.available > 0 ? 'default' : 'red'} sub={`${((todayOps.inHouse.length / TOTAL_ROOMS) * 100).toFixed(0)}% occupancy`} />
+            <StatCard label="Available" value={`${todayOps.available}`} color={todayOps.available > 0 ? 'default' : 'red'} sub={`${((todayOps.inHouse.length / TOTAL_ROOMS) * 100).toFixed(1)}% today`} />
           </div>
 
           {todayOps.checkIns.length > 0 && (

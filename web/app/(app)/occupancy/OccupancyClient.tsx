@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Guest } from '@/types'
 import PageHeader from '@/components/PageHeader'
 
-const ROOMS = Array.from({ length: 10 }, (_, i) => i + 1)
+const TOTAL_ROOMS = 10
+const ROOMS = Array.from({ length: TOTAL_ROOMS }, (_, i) => i + 1)
 
 const COLORS = [
   'bg-blue-200 text-blue-800',
@@ -59,17 +60,55 @@ export default function OccupancyClient({ guests }: { guests: Guest[] }) {
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December']
 
+  // Occupancy Rate = (Room Nights Sold / Room Nights Available) × 100
+  const roomNightsAvailable = TOTAL_ROOMS * daysInMonth
+  const roomNightsSold = monthGuests.reduce((sum, g) => {
+    const ci = new Date(g.check_in)
+    const co = new Date(g.check_out)
+    const start = new Date(Math.max(ci.getTime(), monthStart.getTime()))
+    const end   = new Date(Math.min(co.getTime(), monthEnd.getTime()))
+    const nights = Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000))
+    return sum + nights
+  }, 0)
+  const occupancyRate = roomNightsAvailable > 0
+    ? ((roomNightsSold / roomNightsAvailable) * 100).toFixed(1)
+    : '0.0'
+
   const prev = () => { if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1) }
   const next = () => { if (month === 11) { setMonth(0); setYear(y => y + 1) } else setMonth(m => m + 1) }
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <PageHeader title="Occupancy Calendar" subtitle={`${monthGuests.length} bookings this month`} />
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button onClick={prev} className="p-2 hover:bg-slate-100 rounded-lg"><ChevronLeft size={18} /></button>
           <span className="text-sm sm:text-base font-semibold w-36 text-center">{MONTH_NAMES[month]} {year}</span>
           <button onClick={next} className="p-2 hover:bg-slate-100 rounded-lg"><ChevronRight size={18} /></button>
+        </div>
+      </div>
+
+      {/* Occupancy stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+          <p className="text-2xl font-bold text-blue-700">{occupancyRate}%</p>
+          <p className="text-xs font-medium text-blue-600 mt-0.5">Occupancy Rate</p>
+          <p className="text-xs text-slate-400 mt-0.5">{MONTH_NAMES[month]} {year}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+          <p className="text-2xl font-bold text-slate-800">{roomNightsSold}</p>
+          <p className="text-xs font-medium text-slate-500 mt-0.5">Room Nights Sold</p>
+          <p className="text-xs text-slate-400 mt-0.5">of {roomNightsAvailable} available</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+          <p className="text-2xl font-bold text-slate-800">{monthGuests.length}</p>
+          <p className="text-xs font-medium text-slate-500 mt-0.5">Bookings</p>
+          <p className="text-xs text-slate-400 mt-0.5">{TOTAL_ROOMS} rooms total</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+          <p className="text-2xl font-bold text-slate-800">{daysInMonth}</p>
+          <p className="text-xs font-medium text-slate-500 mt-0.5">Days in Month</p>
+          <p className="text-xs text-slate-400 mt-0.5">{roomNightsAvailable} total capacity</p>
         </div>
       </div>
 
