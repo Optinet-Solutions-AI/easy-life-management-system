@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Pencil, Trash2, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, Pencil, Trash2, ShieldCheck, ShieldAlert, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, PAYMENT_METHODS, ROOMS } from '@/types'
 import type { Guest } from '@/types'
@@ -16,16 +16,35 @@ const EMPTY: Partial<Guest> = {
   passport_number: '', passport_expiry: '', tm30: false,
 }
 
+const PAGE_SIZE = 10
+
+type SortKey = 'check_in' | 'check_out' | 'room' | 'guest_name' | 'amount_thb_stay' | 'payment'
+type SortDir = 'asc' | 'desc'
+
 export default function GuestsClient({ initialGuests }: { initialGuests: Guest[] }) {
   const { format } = useCurrency()
-  const [guests, setGuests] = useState<Guest[]>(initialGuests)
+
+  // Deduplicate on client side by id
+  const allGuests = useMemo(() => {
+    const seen = new Set<string>()
+    return initialGuests.filter(g => {
+      if (seen.has(g.id)) return false
+      seen.add(g.id)
+      return true
+    })
+  }, [initialGuests])
+
+  const [guests, setGuests] = useState<Guest[]>(allGuests)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Guest | null>(null)
   const [form, setForm] = useState<Partial<Guest>>(EMPTY)
   const [saving, setSaving] = useState(false)
-  const [page, setPage] = useState(1)
-  const PAGE_SIZE = 50
-  const visible = guests.slice(0, page * PAGE_SIZE)
+
+  // Search + sort + pagination state
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('check_in')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const openNew = () => { setEditing(null); setForm(EMPTY); setOpen(true) }
   const openEdit = (g: Guest) => { setEditing(g); setForm(g); setOpen(true) }
@@ -68,11 +87,67 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
     return { label: 'Upcoming', cls: 'bg-blue-100 text-blue-700' }
   }
 
+  // Filter
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return guests
+    return guests.filter(g =>
+      g.guest_name.toLowerCase().includes(q) ||
+      String(g.room).includes(q) ||
+      (g.email ?? '').toLowerCase().includes(q) ||
+      (g.passport_number ?? '').toLowerCase().includes(q)
+    )
+  }, [guests, search])
+
+  // Sort
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let av: number | string = 0, bv: number | string = 0
+      if (sortKey === 'check_in' || sortKey === 'check_out') {
+        av = new Date(a[sortKey]).getTime()
+        bv = new Date(b[sortKey]).getTime()
+      } else if (sortKey === 'room') {
+        av = a.room; bv = b.room
+      } else if (sortKey === 'guest_name') {
+        av = a.guest_name.toLowerCase(); bv = b.guest_name.toLowerCase()
+      } else if (sortKey === 'amount_thb_stay') {
+        av = a.amount_thb_stay ?? 0; bv = b.amount_thb_stay ?? 0
+      } else if (sortKey === 'payment') {
+        av = a.payment ?? 0; bv = b.payment ?? 0
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1
+      if (av > bv) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [filtered, sortKey, sortDir])
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const safePage = Math.min(currentPage, totalPages)
+  const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+    setCurrentPage(1)
+  }
+
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <ChevronUp size={12} className="text-slate-300 ml-1 inline" />
+    return sortDir === 'asc'
+      ? <ChevronUp size={12} className="text-blue-500 ml-1 inline" />
+      : <ChevronDown size={12} className="text-blue-500 ml-1 inline" />
+  }
+
   return (
     <>
       <PageHeader
         title="Guests"
-        subtitle={`${guests.length} bookings`}
+        subtitle={`${filtered.length} of ${guests.length} bookings`}
         action={
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Guest
@@ -80,9 +155,21 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
         }
       />
 
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search by name, room, email, passport…"
+          value={search}
+          onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
+          className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
+
       {/* Mobile card list */}
       <div className="sm:hidden space-y-3">
-        {visible.map(g => {
+        {paginated.map(g => {
           const ns = Math.max(0, Math.round((new Date(g.check_out).getTime() - new Date(g.check_in).getTime()) / 86400000))
           const stay = g.amount_thb_stay ?? (g.amount_thb_day ? g.amount_thb_day * ns : 0)
           const bal = stay - (g.payment ?? 0)
@@ -125,13 +212,25 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
           <table className="w-full text-sm min-w-[900px]">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Room</th>
-                <th className="text-left px-4 py-3 font-medium">Guest</th>
-                <th className="text-left px-4 py-3 font-medium">Check-In</th>
-                <th className="text-left px-4 py-3 font-medium">Check-Out</th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('room')}>
+                  Room <SortIcon col="room" />
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('guest_name')}>
+                  Guest <SortIcon col="guest_name" />
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('check_in')}>
+                  Check-In <SortIcon col="check_in" />
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('check_out')}>
+                  Check-Out <SortIcon col="check_out" />
+                </th>
                 <th className="text-right px-4 py-3 font-medium">Nights</th>
-                <th className="text-right px-4 py-3 font-medium">Stay Total</th>
-                <th className="text-right px-4 py-3 font-medium">Paid</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('amount_thb_stay')}>
+                  Stay Total <SortIcon col="amount_thb_stay" />
+                </th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('payment')}>
+                  Paid <SortIcon col="payment" />
+                </th>
                 <th className="text-right px-4 py-3 font-medium">Balance</th>
                 <th className="text-left px-4 py-3 font-medium">Status</th>
                 <th className="text-center px-4 py-3 font-medium">TM30</th>
@@ -139,7 +238,9 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {visible.map(g => {
+              {paginated.length === 0 ? (
+                <tr><td colSpan={11} className="text-center py-12 text-slate-400">No guests found.</td></tr>
+              ) : paginated.map(g => {
                 const ns = Math.max(0, Math.round((new Date(g.check_out).getTime() - new Date(g.check_in).getTime()) / 86400000))
                 const stay = g.amount_thb_stay ?? (g.amount_thb_day ? g.amount_thb_day * ns : 0)
                 const bal = stay - (g.payment ?? 0)
@@ -179,14 +280,37 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
         </div>
       </div>
 
-      {visible.length < guests.length && (
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => setPage(p => p + 1)}
-            className="px-6 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900"
-          >
-            Load more ({guests.length - visible.length} remaining)
-          </button>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-slate-500">
+            Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, sorted.length)} of {sorted.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => setCurrentPage(p)}
+                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === safePage ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-600'}`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
 
