@@ -2,8 +2,7 @@ import { supabase } from '@/lib/supabase'
 import DashboardClient from './DashboardClient'
 
 export default async function DashboardPage() {
-  const [bankRes, todosRes, guestsRes] = await Promise.all([
-    supabase.from('bank_balances').select('*').order('recorded_date', { ascending: false }).limit(5),
+  const [todosRes, guestsRes] = await Promise.all([
     supabase.from('todos').select('status'),
     supabase.from('guests')
       .select('id, check_in, check_out, room, guest_name, amount_thb_stay, payment')
@@ -28,7 +27,6 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      bankBalances={bankRes.data ?? []}
       currentGuests={currentGuests}
       upcomingGuests={upcomingGuests}
       todosByStatus={todosByStatus}

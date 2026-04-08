@@ -14,14 +14,15 @@ type Tab = 'today' | 'bookings' | 'revenue' | 'tasks' | 'operations' | 'cash'
 interface GuestRow { id: string; room: number; guest_name: string; check_in: string; check_out: string; amount_thb_stay: number | null; payment: number | null; tm30: boolean }
 interface TodoRow { id: string; topic: string; department: string | null; status: string; target_date: string | null; responsible_person: string | null; status_notes: string | null }
 interface RevenueRow { amount_thb: number | null; date: string; type: string | null }
-interface BankRow { id: string; label: string; amount: number; status?: string | null }
-interface ExpenseRow { amount: number | null; payment_date: string | null; category: string | null; supplier: string | null }
+interface AccountRow { id: string; account_type: string; amount: number; notes: string | null; updated_at: string }
+interface ExpenseRow { amount: number | null; payment_date: string | null; category: string | null; supplier: string | null; document_number?: string | null }
 
 interface Props {
   guests: GuestRow[]
   todos: TodoRow[]
   revenues: RevenueRow[]
-  bankBalances: BankRow[]
+  accountBalances: AccountRow[]
+  noInvoiceTotal: number
   expenses: ExpenseRow[]
 }
 
@@ -41,7 +42,15 @@ function StatusDot({ status }: { status: string }) {
   return <span className={`inline-block w-2 h-2 rounded-full ${colors[status] ?? 'bg-slate-300'}`} />
 }
 
-export default function OperationsDashClient({ guests, todos, revenues, bankBalances, expenses }: Props) {
+const ACCOUNT_STYLE: Record<string, { emoji: string; bg: string }> = {
+  'Bank':    { emoji: '🏦', bg: 'bg-blue-50 border-blue-200' },
+  'Cash':    { emoji: '💵', bg: 'bg-green-50 border-green-200' },
+  'Wise':    { emoji: '💳', bg: 'bg-violet-50 border-violet-200' },
+  'Revolut': { emoji: '💳', bg: 'bg-indigo-50 border-indigo-200' },
+  'GM Bank': { emoji: '🏧', bg: 'bg-teal-50 border-teal-200' },
+}
+
+export default function OperationsDashClient({ guests, todos, revenues, accountBalances, noInvoiceTotal, expenses }: Props) {
   const [tab, setTab] = useState<Tab>('today')
   const { format } = useCurrency()
 
@@ -107,7 +116,7 @@ export default function OperationsDashClient({ guests, todos, revenues, bankBala
   }, [todos])
 
   // ── Cash Control ──
-  const bankTotal = bankBalances.reduce((s, b) => s + b.amount, 0)
+  const cashOnHand = accountBalances.reduce((s, a) => s + a.amount, 0)
   const recentExpenses = expenses.slice(0, 10)
 
   return (
@@ -387,25 +396,57 @@ export default function OperationsDashClient({ guests, todos, revenues, bankBala
       {/* ── Tab: Cash Control ── */}
       {tab === 'cash' && (
         <div className="space-y-4">
-          <StatCard label="Total Bank Balance" value={format(bankTotal)} color="blue" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {bankBalances.map(b => (
-              <div key={b.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">{b.label}</p>
-                  {b.status && <p className="text-xs text-slate-400">{b.status}</p>}
-                </div>
-                <p className="text-lg font-bold text-slate-900">{format(b.amount)}</p>
-              </div>
-            ))}
+
+          {/* Summary bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <StatCard label="Total Cash on Hand" value={format(cashOnHand)} color="blue" />
+            <StatCard label="No Invoice/Receipt" value={format(noInvoiceTotal)}
+              color="yellow" sub="Expenses without documents" />
+            {outstanding.length > 0 && (
+              <StatCard label="Guest Receivables" value={format(totalOutstanding)}
+                color="red" sub={`${outstanding.length} guest(s) pending`} />
+            )}
           </div>
-          {outstanding.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <p className="text-sm font-semibold text-slate-700 mb-1">Receivables from Guests</p>
-              <p className="text-2xl font-bold text-red-600">{format(totalOutstanding)}</p>
-              <p className="text-xs text-slate-400 mt-0.5">Pending collection from {outstanding.length} guest(s)</p>
+
+          {/* 6 account cards */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Account Breakdown</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {accountBalances.map(a => {
+                const style = ACCOUNT_STYLE[a.account_type]
+                return (
+                  <div key={a.id} className={`rounded-xl border p-4 ${style?.bg ?? 'bg-white border-slate-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">{style?.emoji ?? '💰'}</span>
+                      <p className="text-sm font-semibold text-slate-700">{a.account_type}</p>
+                    </div>
+                    <p className="text-xl font-bold text-slate-900">{format(a.amount)}</p>
+                    {a.notes && <p className="text-xs text-slate-400 mt-1">{a.notes}</p>}
+                    {a.updated_at && (
+                      <p className="text-xs text-slate-400 mt-1">
+                        Updated {new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* No Invoice/Receipt — calculated */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">🧾</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">No Invoice/Receipt</p>
+                    <span className="text-[10px] font-medium text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">Auto-calculated</span>
+                  </div>
+                </div>
+                <p className="text-xl font-bold text-amber-700">{format(noInvoiceTotal)}</p>
+                <p className="text-xs text-slate-500 mt-1">Total expenses without supporting documents</p>
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Recent expenses */}
           {recentExpenses.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
@@ -416,7 +457,13 @@ export default function OperationsDashClient({ guests, todos, revenues, bankBala
                   <div key={i} className="flex items-center justify-between px-4 py-2.5">
                     <div>
                       <p className="text-sm">{e.supplier ?? e.category ?? '—'}</p>
-                      <p className="text-xs text-slate-400">{e.payment_date ? new Date(e.payment_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'No date'}</p>
+                      <p className="text-xs text-slate-400">
+                        {e.payment_date
+                          ? new Date(e.payment_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                          : 'No date'}
+                        {(!e.document_number || String(e.document_number).trim() === '') &&
+                          <span className="ml-2 text-amber-600 font-medium">No invoice</span>}
+                      </p>
                     </div>
                     <span className="text-sm font-semibold text-red-500">{format(e.amount)}</span>
                   </div>
