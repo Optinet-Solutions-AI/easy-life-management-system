@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, SHAREHOLDERS, PAYMENT_METHODS } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
@@ -11,6 +11,9 @@ import Modal from '@/components/Modal'
 import StatCard from '@/components/StatCard'
 
 const EMPTY: Partial<FoundingContribution> = { date: '', method: '', shareholder: '', amount_thb: null, amount_eur: null, notes: '' }
+const PAGE_SIZE = 10
+type SortKey = 'date' | 'shareholder' | 'amount_thb'
+type SortDir = 'asc' | 'desc'
 
 export default function FoundingClient({ initialContributions }: { initialContributions: FoundingContribution[] }) {
   const { format } = useCurrency()
@@ -19,6 +22,44 @@ export default function FoundingClient({ initialContributions }: { initialContri
   const [editing, setEditing] = useState<FoundingContribution | null>(null)
   const [form, setForm] = useState<Partial<FoundingContribution>>(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return contributions
+    return contributions.filter(c =>
+      c.shareholder.toLowerCase().includes(q) ||
+      (c.method ?? '').toLowerCase().includes(q) ||
+      (c.notes ?? '').toLowerCase().includes(q)
+    )
+  }, [contributions, search])
+
+  const sorted = useMemo(() => [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0
+    if (sortKey === 'date') { av = a.date ?? ''; bv = b.date ?? '' }
+    else if (sortKey === 'shareholder') { av = a.shareholder.toLowerCase(); bv = b.shareholder.toLowerCase() }
+    else if (sortKey === 'amount_thb') { av = a.amount_thb ?? 0; bv = b.amount_thb ?? 0 }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1
+    if (av > bv) return sortDir === 'asc' ? 1 : -1
+    return 0
+  }), [filtered, sortKey, sortDir])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const safePage = Math.min(currentPage, totalPages)
+  const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+    setCurrentPage(1)
+  }
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <ChevronUp size={12} className="text-slate-300 ml-1 inline" />
+    return sortDir === 'asc' ? <ChevronUp size={12} className="text-blue-500 ml-1 inline" /> : <ChevronDown size={12} className="text-blue-500 ml-1 inline" />
+  }
 
   const perShareholder = useMemo(() => {
     return SHAREHOLDERS.map(name => {
@@ -56,7 +97,7 @@ export default function FoundingClient({ initialContributions }: { initialContri
     <>
       <PageHeader
         title="Founding Shareholders"
-        subtitle="Capital contributions by shareholder"
+        subtitle={`${filtered.length} of ${contributions.length} contributions`}
         action={
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Contribution
@@ -75,39 +116,66 @@ export default function FoundingClient({ initialContributions }: { initialContri
         <StatCard label="Total Capital Founded" value={format(grandTotal)} color="blue" />
       </div>
 
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text" placeholder="Search shareholder, method, notes…"
+          value={search} onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
+          className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
+
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Date</th>
-              <th className="text-left px-4 py-3 font-medium">Shareholder</th>
+              <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('date')}>Date <SortIcon col="date" /></th>
+              <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('shareholder')}>Shareholder <SortIcon col="shareholder" /></th>
               <th className="text-left px-4 py-3 font-medium">Method</th>
-              <th className="text-right px-4 py-3 font-medium">Amount (THB)</th>
+              <th className="text-right px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('amount_thb')}>Amount (THB) <SortIcon col="amount_thb" /></th>
               <th className="text-right px-4 py-3 font-medium">Amount (EUR)</th>
               <th className="text-left px-4 py-3 font-medium">Notes</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {contributions.map(c => (
-              <tr key={c.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2.5">{formatDate(c.date)}</td>
-                <td className="px-4 py-2.5 font-medium">{c.shareholder}</td>
-                <td className="px-4 py-2.5 text-slate-500">{c.method}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-blue-600">{format(c.amount_thb)}</td>
-                <td className="px-4 py-2.5 text-right text-slate-500">{c.amount_eur != null ? `€${c.amount_eur.toLocaleString()}` : '—'}</td>
-                <td className="px-4 py-2.5 text-slate-500 text-xs max-w-xs truncate">{c.notes}</td>
-                <td className="px-4 py-2.5">
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                    <button onClick={() => remove(c.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {paginated.length === 0
+              ? <tr><td colSpan={7} className="text-center py-12 text-slate-400">No contributions found.</td></tr>
+              : paginated.map(c => (
+                <tr key={c.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-2.5">{formatDate(c.date)}</td>
+                  <td className="px-4 py-2.5 font-medium">{c.shareholder}</td>
+                  <td className="px-4 py-2.5 text-slate-500">{c.method}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-blue-600">{format(c.amount_thb)}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-500">{c.amount_eur != null ? `€${c.amount_eur.toLocaleString()}` : '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-500 text-xs max-w-xs truncate">{c.notes}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
+                      <button onClick={() => remove(c.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            }
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-slate-500">Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, sorted.length)} of {sorted.length}</p>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft size={16} /></button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === safePage ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-600'}`}>{p}</button>
+            ))}
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronRight size={16} /></button>
+          </div>
+        </div>
+      )}
 
       {open && (
         <Modal title={editing ? 'Edit Contribution' : 'Add Contribution'} onClose={() => setOpen(false)}>

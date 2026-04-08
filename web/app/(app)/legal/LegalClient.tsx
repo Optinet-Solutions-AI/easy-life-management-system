@@ -36,6 +36,12 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
   const [filterYear, setFilterYear] = useState(now.getFullYear())
   const [filterMonth, setFilterMonth] = useState<number | 'all'>('all')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [groupLimits, setGroupLimits] = useState<Record<string, number>>({})
+  const GROUP_DEFAULT = 10
+  function groupLimit(status: string) { return groupLimits[status] ?? GROUP_DEFAULT }
+  function showMore(status: string, total: number) {
+    setGroupLimits(prev => ({ ...prev, [status]: total }))
+  }
 
   const printRef = useRef<HTMLDivElement>(null)
 
@@ -204,6 +210,7 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
         {(['Accepted', 'Clarification Needed', 'Rejected', 'Pending'] as LegalStatus[]).map(status => {
           const group = filtered.filter(e => (e.legal_status ?? 'Pending') === status)
           if (group.length === 0) return null
+          const visibleGroup = group.slice(0, groupLimit(status))
           const groupTotal = group.reduce((s, e) => s + Math.abs(e.amount ?? 0), 0)
           const style = STATUS_STYLE[status]
 
@@ -236,7 +243,7 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {group.map(e => {
+                      {visibleGroup.map(e => {
                         const isExpanded = expanded === e.id
                         return (
                           <>
@@ -289,7 +296,7 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
 
                 {/* Mobile cards */}
                 <div className="md:hidden divide-y divide-slate-100">
-                  {group.map(e => (
+                  {visibleGroup.map(e => (
                     <div key={e.id} className="p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -311,6 +318,14 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
                   ))}
                 </div>
               </div>
+              {/* Show more */}
+              {group.length > groupLimit(status) && (
+                <div className="px-4 py-2.5 border-t border-slate-100 text-center print:hidden">
+                  <button onClick={() => showMore(status, group.length)} className="text-xs text-blue-600 hover:underline font-medium">
+                    Show {group.length - groupLimit(status)} more ({group.length} total)
+                  </button>
+                </div>
+              )}
             </div>
           )
         })}

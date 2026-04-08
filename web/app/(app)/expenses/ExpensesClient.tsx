@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef } from 'react'
-import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2, FileText } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2, FileText, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, SHAREHOLDERS } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
@@ -28,7 +28,9 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('')
   const [legalOnly, setLegalOnly] = useState(false)
-  const [page, setPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortKey, setSortKey] = useState<'payment_date' | 'category' | 'supplier' | 'amount'>('payment_date')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   // OCR state
   const [ocrLoading, setOcrLoading] = useState(false)
@@ -39,10 +41,10 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   const [previewIsPdf, setPreviewIsPdf] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const PAGE_SIZE = 50
+  const PAGE_SIZE = 10
 
   const filtered = useMemo(() => {
-    setPage(1)
+    setCurrentPage(1)
     return expenses.filter(e => {
       if (legalOnly && !e.is_legal) return false
       if (catFilter && e.category !== catFilter) return false
@@ -56,7 +58,31 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
     })
   }, [expenses, search, catFilter, legalOnly])
 
-  const visible = filtered.slice(0, page * PAGE_SIZE)
+  const sorted = useMemo(() => [...filtered].sort((a, b) => {
+    let av: number | string = 0, bv: number | string = 0
+    if (sortKey === 'payment_date') { av = a.payment_date ?? ''; bv = b.payment_date ?? '' }
+    else if (sortKey === 'category') { av = (a.category ?? '').toLowerCase(); bv = (b.category ?? '').toLowerCase() }
+    else if (sortKey === 'supplier') { av = (a.supplier ?? '').toLowerCase(); bv = (b.supplier ?? '').toLowerCase() }
+    else if (sortKey === 'amount') { av = Math.abs(a.amount ?? 0); bv = Math.abs(b.amount ?? 0) }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1
+    if (av > bv) return sortDir === 'asc' ? 1 : -1
+    return 0
+  }), [filtered, sortKey, sortDir])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const safePage = Math.min(currentPage, totalPages)
+  const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  function toggleSort(key: typeof sortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+    setCurrentPage(1)
+  }
+  function SortIcon({ col }: { col: typeof sortKey }) {
+    if (sortKey !== col) return <ChevronUp size={12} className="text-slate-300 ml-1 inline" />
+    return sortDir === 'asc' ? <ChevronUp size={12} className="text-blue-500 ml-1 inline" /> : <ChevronDown size={12} className="text-blue-500 ml-1 inline" />
+  }
+
   const total = filtered.reduce((s, e) => s + Math.abs(e.amount ?? 0), 0)
 
   const openNew = () => {
@@ -215,11 +241,11 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Ref</th>
-                <th className="text-left px-4 py-3 font-medium">Date</th>
-                <th className="text-left px-4 py-3 font-medium">Category</th>
-                <th className="text-left px-4 py-3 font-medium">Supplier</th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('payment_date')}>Date <SortIcon col="payment_date" /></th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('category')}>Category <SortIcon col="category" /></th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('supplier')}>Supplier <SortIcon col="supplier" /></th>
                 <th className="text-left px-4 py-3 font-medium">Description</th>
-                <th className="text-right px-4 py-3 font-medium">Amount</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('amount')}>Amount <SortIcon col="amount" /></th>
                 <th className="text-left px-4 py-3 font-medium">Method</th>
                 <th className="text-left px-4 py-3 font-medium">Paid By</th>
                 <th className="text-left px-4 py-3 font-medium">Audit</th>
@@ -227,7 +253,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {visible.map(e => (
+              {paginated.map(e => (
                 <tr key={e.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5 text-xs text-slate-500 font-mono">{e.transaction_number ?? '—'}</td>
                   <td className="px-4 py-2.5 text-slate-600">{formatDate(e.payment_date)}</td>
@@ -265,14 +291,18 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
         </div>
       </div>
 
-      {visible.length < filtered.length && (
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => setPage(p => p + 1)}
-            className="px-6 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900"
-          >
-            Load more ({filtered.length - visible.length} remaining)
-          </button>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-slate-500">Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, sorted.length)} of {sorted.length}</p>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft size={16} /></button>
+            {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => i + 1).map(p => (
+              <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === safePage ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-600'}`}>{p}</button>
+            ))}
+            {totalPages > 10 && <span className="text-slate-400 text-sm px-1">…</span>}
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronRight size={16} /></button>
+          </div>
         </div>
       )}
 

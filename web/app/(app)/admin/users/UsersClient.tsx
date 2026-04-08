@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, KeyRound, Trash2, ShieldCheck } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, KeyRound, Trash2, ShieldCheck, Search } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 
@@ -43,6 +43,17 @@ const EMPTY_ADD: AddForm = { username: '', display_name: '', role: 'staff', pass
 
 export default function UsersClient({ initialUsers, currentUserId }: { initialUsers: User[]; currentUserId: string }) {
   const [users, setUsers] = useState<User[]>(initialUsers)
+  const [search, setSearch] = useState('')
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return users
+    return users.filter(u =>
+      u.display_name.toLowerCase().includes(q) ||
+      u.username.toLowerCase().includes(q) ||
+      u.role.toLowerCase().includes(q)
+    )
+  }, [users, search])
   const [showAdd, setShowAdd] = useState(false)
   const [addForm, setAddForm] = useState<AddForm>(EMPTY_ADD)
   const [addError, setAddError] = useState<string | null>(null)
@@ -136,7 +147,7 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
     <div className="p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="User Management"
-        subtitle={`${users.length} user${users.length !== 1 ? 's' : ''}`}
+        subtitle={`${filteredUsers.length} of ${users.length} users`}
         action={
           <button
             onClick={() => { setShowAdd(true); setAddError(null); setAddForm(EMPTY_ADD) }}
@@ -147,8 +158,18 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
         }
       />
 
+      {/* Search */}
+      <div className="relative mt-4">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text" placeholder="Search name, username, role…"
+          value={search} onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
+
       {/* Desktop table */}
-      <div className="mt-6 hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="mt-4 hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
@@ -160,7 +181,10 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {users.map(u => (
+            {filteredUsers.length === 0
+              ? <tr><td colSpan={5} className="text-center py-10 text-slate-400">No users found.</td></tr>
+              : null}
+            {filteredUsers.map(u => (
               <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-slate-900">
                   <div className="flex items-center gap-2">
@@ -206,8 +230,8 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
       </div>
 
       {/* Mobile cards */}
-      <div className="mt-6 md:hidden space-y-3">
-        {users.map(u => (
+      <div className="mt-4 md:hidden space-y-3">
+        {filteredUsers.map(u => (
           <div key={u.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
