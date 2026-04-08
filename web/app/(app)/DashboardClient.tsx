@@ -1,45 +1,152 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
+import { Loader2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { useCurrency } from '@/context/CurrencyContext'
-import PageHeader from '@/components/PageHeader'
 import StatCard from '@/components/StatCard'
 
-interface BankBalance { id: string; label: string; amount: number; status?: string | null }
-interface GuestRow { id: string; room: string; guest_name: string; check_in: string; check_out: string; amount_thb_stay: number | null; payment: number | null }
+const THIS_YEAR = new Date().getFullYear()
+const YEARS = Array.from({ length: THIS_YEAR - 2022 }, (_, i) => 2023 + i) // 2023 → current year
 
+interface BankBalance { id: string; label: string; amount: number; status?: string | null }
+interface GuestRow {
+  id: string; room: string; guest_name: string
+  check_in: string; check_out: string
+  amount_thb_stay: number | null; payment: number | null
+}
 interface Props {
-  totalExpenses: number
-  totalRevenue: number
-  totalFounded: number
-  netPosition: number
   bankBalances: BankBalance[]
   currentGuests: GuestRow[]
   upcomingGuests: GuestRow[]
   todosByStatus: Record<string, number>
 }
 
-export default function DashboardClient({
-  totalExpenses, totalRevenue, totalFounded, netPosition,
-  bankBalances, currentGuests, upcomingGuests, todosByStatus,
-}: Props) {
+interface Financials {
+  totalExpenses: number
+  totalRevenue: number
+  totalFounded: number
+}
+
+export default function DashboardClient({ bankBalances, currentGuests, upcomingGuests, todosByStatus }: Props) {
   const { format } = useCurrency()
+  const [selectedYears, setSelectedYears] = useState<number[]>([THIS_YEAR])
+  const [financials, setFinancials] = useState<Financials | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const toggleYear = (y: number) => {
+    setSelectedYears(prev => {
+      if (prev.includes(y)) {
+        return prev.length === 1 ? prev : prev.filter(x => x !== y)
+      }
+      return [...prev, y].sort((a, b) => a - b)
+    })
+  }
+
+  const fetchFinancials = useCallback(async () => {
+    setLoading(true)
+    const minYear = Math.min(...selectedYears)
+    const maxYear = Math.max(...selectedYears)
+    const from = `${minYear}-01-01`
+    const to   = `${maxYear}-12-31`
+
+    const [expensesRes, revenueRes, foundingRes] = await Promise.all([
+      supabase.from('expenses').select('amount, payment_date').gte('payment_date', from).lte('payment_date', to),
+      supabase.from('revenue').select('amount_thb, date').gte('date', from).lte('date', to),
+      supabase.from('founding_contributions').select('amount_thb, date').gte('date', from).lte('date', to),
+    ])
+
+    // Handle non-contiguous year selections (e.g. 2024 + 2026 without 2025)
+    const inRange = (dateStr: string | null) => {
+      if (!dateStr) return false
+      return selectedYears.includes(new Date(dateStr).getFullYear())
+    }
+
+    const totalExpenses = (expensesRes.data ?? [])
+      .filter(r => inRange(r.payment_date))
+      .reduce((s, r) => s + Math.abs(r.amount ?? 0), 0)
+
+    const totalRevenue = (revenueRes.data ?? [])
+      .filter(r => inRange(r.date))
+      .reduce((s, r) => s + (r.amount_thb ?? 0), 0)
+
+    const totalFounded = (foundingRes.data ?? [])
+      .filter(r => inRange(r.date))
+      .reduce((s, r) => s + (r.amount_thb ?? 0), 0)
+
+    setFinancials({ totalExpenses, totalRevenue, totalFounded })
+    setLoading(false)
+  }, [selectedYears])
+
+  useEffect(() => { fetchFinancials() }, [fetchFinancials])
+
+  const netPosition = financials
+    ? financials.totalRevenue + financials.totalFounded - financials.totalExpenses
+    : 0
+
+  const yearLabel = selectedYears.length === 1
+    ? String(selectedYears[0])
+    : selectedYears.join(' + ')
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <PageHeader title="Dashboard" subtitle="Dream-T Management System" />
 
-      {/* Financial Summary */}
+      {/* Header + Year Selector */}
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Dream-T Management System</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-medium text-slate-400 mr-1">Year</span>
+          {YEARS.map(y => (
+            <button
+              key={y}
+              onClick={() => toggleYear(y)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors border ${
+                selectedYears.includes(y)
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'
+              }`}
+            >
+              {y}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Financial KPIs */}
       <section className="mb-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Financial Overview</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3 flex items-center gap-2">
+          Financial Overview — {yearLabel}
+          {loading && <Loader2 size={12} className="animate-spin text-blue-400" />}
+        </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Total Expenses" value={format(totalExpenses)} color="red" />
-          <StatCard label="Total Revenue" value={format(totalRevenue)} color="green" />
-          <StatCard label="Capital Founded" value={format(totalFounded)} color="blue" />
-          <StatCard label="Net Position" value={format(netPosition)} color={netPosition >= 0 ? 'green' : 'red'} sub="Revenue + Founded − Expenses" />
+          <StatCard
+            label="Total Expenses"
+            value={loading ? '—' : format(financials!.totalExpenses)}
+            color="red"
+          />
+          <StatCard
+            label="Total Revenue"
+            value={loading ? '—' : format(financials!.totalRevenue)}
+            color="green"
+          />
+          <StatCard
+            label="Capital Funded"
+            value={loading ? '—' : format(financials!.totalFounded)}
+            color="blue"
+          />
+          <StatCard
+            label="Net Position"
+            value={loading ? '—' : format(netPosition)}
+            color={!loading && netPosition >= 0 ? 'green' : 'red'}
+            sub="Revenue + Funded − Expenses"
+          />
         </div>
       </section>
 
-      {/* Bank Balances */}
+      {/* Account Balances */}
       {bankBalances.length > 0 && (
         <section className="mb-6">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Account Balances</h2>
@@ -52,7 +159,8 @@ export default function DashboardClient({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Current Guests */}
+
+        {/* Currently In-House */}
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
             Currently In-House ({currentGuests.length})
@@ -81,7 +189,7 @@ export default function DashboardClient({
                           <td className="px-3 py-2 text-slate-500 hidden sm:table-cell">
                             {new Date(g.check_out).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                           </td>
-                          <td className={`px-3 py-2 text-right font-medium text-sm ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          <td className={`px-3 py-2 text-right font-medium ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
                             {format(balance)}
                           </td>
                         </tr>
@@ -121,7 +229,9 @@ export default function DashboardClient({
                         <td className="px-3 py-2 text-slate-500">
                           {new Date(g.check_in).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                         </td>
-                        <td className="px-3 py-2 text-right font-medium hidden sm:table-cell">{format(g.amount_thb_stay)}</td>
+                        <td className="px-3 py-2 text-right font-medium hidden sm:table-cell">
+                          {format(g.amount_thb_stay)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -131,15 +241,15 @@ export default function DashboardClient({
           </div>
         </section>
 
-        {/* Task Summary */}
+        {/* Tasks Summary */}
         <section className="lg:col-span-1">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Tasks Summary</h2>
           <div className="bg-white rounded-xl border border-slate-200 p-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3">
             {[
               { label: 'Complete', color: 'text-green-600 bg-green-50' },
-              { label: 'Ongoing', color: 'text-blue-600 bg-blue-50' },
-              { label: 'Pending', color: 'text-yellow-600 bg-yellow-50' },
-              { label: 'Blocked', color: 'text-red-600 bg-red-50' },
+              { label: 'Ongoing',  color: 'text-blue-600 bg-blue-50' },
+              { label: 'Pending',  color: 'text-yellow-600 bg-yellow-50' },
+              { label: 'Blocked',  color: 'text-red-600 bg-red-50' },
             ].map(({ label, color }) => (
               <div key={label} className={`rounded-lg px-3 py-3 ${color}`}>
                 <p className="text-2xl font-bold">{todosByStatus[label] ?? 0}</p>
@@ -148,6 +258,7 @@ export default function DashboardClient({
             ))}
           </div>
         </section>
+
       </div>
     </div>
   )
