@@ -14,6 +14,8 @@ export interface Guest {
   notes: string | null
   email: string | null
   phone: string | null
+  passport_number: string | null
+  passport_expiry: string | null
   tm30: boolean
   created_at: string
 }

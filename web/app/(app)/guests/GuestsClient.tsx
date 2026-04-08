@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, PAYMENT_METHODS, ROOMS } from '@/types'
 import type { Guest } from '@/types'
@@ -12,7 +12,8 @@ import { useCurrency } from '@/context/CurrencyContext'
 const EMPTY: Partial<Guest> = {
   room: 1, check_in: '', check_out: '', guest_name: '', guest_count: 1,
   amount_thb_day: null, amount_thb_stay: null, paid: '', payment: 0,
-  invoice: '', notes: '', email: '', phone: '', tm30: false,
+  invoice: '', notes: '', email: '', phone: '',
+  passport_number: '', passport_expiry: '', tm30: false,
 }
 
 export default function GuestsClient({ initialGuests }: { initialGuests: Guest[] }) {
@@ -99,8 +100,15 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                 </div>
               </div>
               <div className="text-xs text-slate-500 mb-2">{formatDate(g.check_in)} → {formatDate(g.check_out)}</div>
+              {g.passport_number && <p className="text-xs text-slate-400 font-mono mb-2">🛂 {g.passport_number}{g.passport_expiry ? ` · exp. ${formatDate(g.passport_expiry)}` : ''}</p>}
               <div className="flex items-center justify-between">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{label}</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{label}</span>
+                  {g.tm30
+                    ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full"><ShieldCheck size={11} /> TM30</span>
+                    : <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full"><ShieldAlert size={11} /> TM30</span>
+                  }
+                </div>
                 <div className="text-right">
                   <p className="text-xs text-slate-400">Total {format(stay)}</p>
                   <p className={`text-sm font-bold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{bal > 0 ? `Owes ${format(bal)}` : 'Paid'}</p>
@@ -142,6 +150,7 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                     <td className="px-4 py-3">
                       <p className="font-medium">{g.guest_name}</p>
                       {g.email && <p className="text-xs text-slate-400">{g.email}</p>}
+                      {g.passport_number && <p className="text-xs text-slate-400 font-mono">🛂 {g.passport_number}</p>}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(g.check_in)}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(g.check_out)}</td>
@@ -150,7 +159,12 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                     <td className="px-4 py-3 text-right text-green-600">{format(g.payment)}</td>
                     <td className={`px-4 py-3 text-right font-semibold ${bal > 0 ? 'text-red-600' : 'text-slate-400'}`}>{format(bal)}</td>
                     <td className="px-4 py-3"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{label}</span></td>
-                    <td className="px-4 py-3 text-center">{g.tm30 ? '✅' : '—'}</td>
+                    <td className="px-4 py-3 text-center">
+                      {g.tm30
+                        ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full"><ShieldCheck size={11} /> Filed</span>
+                        : <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full"><ShieldAlert size={11} /> Pending</span>
+                      }
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
@@ -228,10 +242,36 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
               <label className="label">Notes</label>
               <textarea className="input" rows={2} value={form.notes ?? ''} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="tm30" checked={form.tm30 ?? false} onChange={e => setForm(f => ({ ...f, tm30: e.target.checked }))} />
-              <label htmlFor="tm30" className="text-sm font-medium text-slate-700">TM30 Filed</label>
+
+            {/* Legal & Compliance */}
+            <div className="sm:col-span-2 border-t border-slate-100 pt-4 mt-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Legal &amp; Compliance</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Passport Number</label>
+                  <input className="input font-mono" value={form.passport_number ?? ''} onChange={e => setForm(f => ({ ...f, passport_number: e.target.value }))} placeholder="e.g. AB123456" />
+                </div>
+                <div>
+                  <label className="label">Passport Expiry</label>
+                  <input type="date" className="input" value={form.passport_expiry ?? ''} onChange={e => setForm(f => ({ ...f, passport_expiry: e.target.value }))} />
+                </div>
+              </div>
+              <div className={`mt-3 flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${form.tm30 ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}
+                onClick={() => setForm(f => ({ ...f, tm30: !f.tm30 }))}>
+                <input type="checkbox" id="tm30" checked={form.tm30 ?? false} readOnly className="w-4 h-4 accent-green-600" />
+                <div>
+                  <label htmlFor="tm30" className={`text-sm font-semibold cursor-pointer ${form.tm30 ? 'text-green-700' : 'text-amber-700'}`}>
+                    TM30 Filed
+                  </label>
+                  <p className="text-xs text-slate-500">Immigration notification for foreign guest stay</p>
+                </div>
+                {form.tm30
+                  ? <ShieldCheck size={18} className="ml-auto text-green-600 shrink-0" />
+                  : <ShieldAlert size={18} className="ml-auto text-amber-500 shrink-0" />
+                }
+              </div>
             </div>
+
             {balance > 0 && (
               <div className="col-span-2 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
                 Balance due: <strong>{format(balance)}</strong>
