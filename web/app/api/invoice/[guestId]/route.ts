@@ -102,6 +102,17 @@ export async function GET(
             background-color: #FFFFFF;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
+        .invoice-footer {
+            max-width: 850px;
+            margin: 0 auto;
+            border-top: 1px solid var(--border-green);
+            padding: 12px 40px;
+            background-color: var(--bg-tint-green);
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.2px;
+        }
         .header {
             background-color: var(--dark-green);
             color: #FFFFFF;
@@ -328,6 +339,10 @@ export async function GET(
             </div>
         </div>
     </div>
+</div>
+
+<div class="invoice-footer">
+    Dream-T CO., Ltd.&nbsp;&nbsp;|&nbsp;&nbsp;Koh Phangan&nbsp;&nbsp;|&nbsp;&nbsp;info@DreamT-CO.com&nbsp;&nbsp;|&nbsp;&nbsp;Taxpayer ID: 0105568076277
 </div>
 
 <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
