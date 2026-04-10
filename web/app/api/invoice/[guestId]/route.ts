@@ -105,12 +105,11 @@ export async function GET(
         .invoice-footer {
             max-width: 850px;
             margin: 0 auto;
-            border-top: 1px solid var(--border-green);
             padding: 12px 40px;
-            background-color: var(--bg-tint-green);
+            background-color: var(--dark-green);
             text-align: center;
             font-size: 11px;
-            color: var(--text-muted);
+            color: #A3CCB4;
             letter-spacing: 0.2px;
         }
         .header {
