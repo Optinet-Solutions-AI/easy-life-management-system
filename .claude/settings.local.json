@@ -15,6 +15,10 @@
       "Bash(python3 -c ':*)",
       "Bash(cd /tmp)",
       "Bash(node import-from-excel.js)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Chris-Optinet\\elms\\web\\app\\api",
+      "c:\\Users\\Chris-Optinet\\elms\\web\\app\\api\\invoice"
     ]
   }
 }

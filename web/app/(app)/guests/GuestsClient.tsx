@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash2, ShieldCheck, ShieldAlert, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, ShieldCheck, ShieldAlert, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, PAYMENT_METHODS, ROOMS } from '@/types'
 import type { Guest } from '@/types'
@@ -182,6 +182,7 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                   <p className="text-xs text-slate-500">Room #{g.room} · {ns} nights</p>
                 </div>
                 <div className="flex gap-2">
+                  <a href={`/api/invoice/${g.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-green-700 p-1"><FileText size={15} /></a>
                   <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>
                   <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>
                 </div>
@@ -268,6 +269,7 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
+                        <a href={`/api/invoice/${g.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-green-700"><FileText size={15} /></a>
                         <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
                         <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
                       </div>
