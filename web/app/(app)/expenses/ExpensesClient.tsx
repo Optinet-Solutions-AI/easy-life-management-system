@@ -29,7 +29,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   const [catFilter, setCatFilter] = useState('')
   const [legalOnly, setLegalOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortKey, setSortKey] = useState<'payment_date' | 'category' | 'supplier' | 'amount'>('payment_date')
+  const [sortKey, setSortKey] = useState<'payment_date' | 'category' | 'supplier' | 'amount' | 'document_number'>('payment_date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   // OCR state
@@ -64,6 +64,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
     else if (sortKey === 'category') { av = (a.category ?? '').toLowerCase(); bv = (b.category ?? '').toLowerCase() }
     else if (sortKey === 'supplier') { av = (a.supplier ?? '').toLowerCase(); bv = (b.supplier ?? '').toLowerCase() }
     else if (sortKey === 'amount') { av = Math.abs(a.amount ?? 0); bv = Math.abs(b.amount ?? 0) }
+    else if (sortKey === 'document_number') { av = a.document_number ?? ''; bv = b.document_number ?? '' }
     if (av < bv) return sortDir === 'asc' ? -1 : 1
     if (av > bv) return sortDir === 'asc' ? 1 : -1
     return 0
@@ -279,7 +280,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
           <table className="w-full text-sm min-w-[1100px]">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Ref</th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('document_number')}>Doc # <SortIcon col="document_number" /></th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('payment_date')}>Date <SortIcon col="payment_date" /></th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('category')}>Category <SortIcon col="category" /></th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none whitespace-nowrap" onClick={() => toggleSort('supplier')}>Supplier <SortIcon col="supplier" /></th>
@@ -294,7 +295,15 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
             <tbody className="divide-y divide-slate-100">
               {paginated.map(e => (
                 <tr key={e.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-2.5 text-xs text-slate-500 font-mono">{e.transaction_number ?? '—'}</td>
+                  <td className="px-4 py-2.5 font-mono">
+                    {e.document_number
+                      ? <span className="text-xs font-semibold text-slate-700">{e.document_number}</span>
+                      : <span className="text-xs text-slate-300">—</span>
+                    }
+                    {e.transaction_number && (
+                      <span className="text-[10px] text-slate-400 block">{e.transaction_number}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2.5 text-slate-600">{formatDate(e.payment_date)}</td>
                   <td className="px-4 py-2.5">
                     <span className="text-xs font-medium">{e.category}</span>

@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, ROOMS, COMPLAINT_CATEGORIES, COMPLAINT_SEVERITIES, COMPLAINT_STATUSES } from '@/types'
+import { formatDate, COMPLAINT_CATEGORIES, COMPLAINT_SEVERITIES, COMPLAINT_STATUSES } from '@/types'
+import { useRooms } from '@/context/RoomsContext'
 import type { Complaint } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -42,6 +43,7 @@ const EMPTY: Partial<Complaint> = {
 
 export default function ComplaintsClient({ initialComplaints }: { initialComplaints: Complaint[] }) {
   const [complaints, setComplaints] = useState<Complaint[]>(initialComplaints)
+  const activeRooms = useRooms().filter(r => r.active)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Complaint | null>(null)
   const [form, setForm] = useState<Partial<Complaint>>(EMPTY)
@@ -278,7 +280,7 @@ export default function ComplaintsClient({ initialComplaints }: { initialComplai
               <label className="label">Room</label>
               <select className="input" value={form.room ?? ''} onChange={e => setForm(f => ({ ...f, room: e.target.value ? +e.target.value : null }))}>
                 <option value="">— No room —</option>
-                {ROOMS.map(r => <option key={r} value={r}>Room {r}</option>)}
+                {activeRooms.map(r => <option key={r.number} value={r.number}>{r.name}</option>)}
               </select>
             </div>
             <div>

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import {
   Eye, EyeOff, CheckCircle2, Trash2, Upload, AlertTriangle, CheckCircle,
   Loader2, FileSpreadsheet, RotateCcw, KeyRound, Database, Download,
-  UserCog, Plus, ShieldCheck, Search,
+  UserCog, Plus, ShieldCheck, Search, DoorOpen, Pencil,
 } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -118,6 +118,7 @@ const EMPTY_ADD: AddForm = { username: '', display_name: '', role: 'Shareholder'
 const NAV_ITEMS = [
   { id: 'password',    label: 'Update Password',  icon: KeyRound   },
   { id: 'users',       label: 'User Management',  icon: UserCog    },
+  { id: 'rooms',       label: 'Room Config',       icon: DoorOpen   },
   { id: 'permissions', label: 'Role Permissions', icon: ShieldCheck },
   { id: 'import',      label: 'Import Data',      icon: Upload     },
   { id: 'export',      label: 'Export Data',      icon: Download   },
@@ -126,6 +127,10 @@ const NAV_ITEMS = [
 
 type ResetStatus = 'idle' | 'loading' | 'done' | 'error'
 
+// ── Room ─────────────────────────────────────────────────────────────────────
+
+type Room = { id: string; number: number; name: string; active: boolean }
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function SettingsClient({
@@ -133,11 +138,13 @@ export default function SettingsClient({
   currentUserId,
   initialUsers,
   initialPermissions,
+  initialRooms,
 }: {
   isAdmin: boolean
   currentUserId: string
   initialUsers: User[]
   initialPermissions: PermRow[]
+  initialRooms: Room[]
 }) {
 
   // ── Active nav section ────────────────────────────────────────────────────
@@ -207,6 +214,13 @@ export default function SettingsClient({
   const [selectedRole, setSelectedRole] = useState(PERM_ROLES[0])
   const [permsSaving,  setPermsSaving]  = useState(false)
   const [permsSaved,   setPermsSaved]   = useState(false)
+
+  // ── Room state ────────────────────────────────────────────────────────────
+  const [rooms, setRooms] = useState<Room[]>(initialRooms)
+  const [showAddRoom, setShowAddRoom] = useState(false)
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null)
+  const [roomForm, setRoomForm] = useState<{ number: number | ''; name: string }>({ number: '', name: '' })
+  const [roomSaving, setRoomSaving] = useState(false)
 
   // ── Import state ──────────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState<ResetStatus>('idle')
@@ -404,6 +418,63 @@ export default function SettingsClient({
     } finally { setPermsSaving(false) }
   }
 
+  // ── Handlers: rooms ──────────────────────────────────────────────────────
+  async function handleAddRoom(e: React.FormEvent) {
+    e.preventDefault()
+    if (!roomForm.number || !roomForm.name.trim()) return
+    setRoomSaving(true)
+    try {
+      const res = await fetch('/api/admin/rooms', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: Number(roomForm.number), name: roomForm.name.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setRooms(prev => [...prev, json].sort((a, b) => a.number - b.number))
+      setRoomForm({ number: '', name: '' })
+      setShowAddRoom(false)
+    } catch (err) { alert('Failed: ' + (err instanceof Error ? err.message : String(err))) }
+    finally { setRoomSaving(false) }
+  }
+
+  async function handleUpdateRoom(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingRoom || !roomForm.name.trim()) return
+    setRoomSaving(true)
+    try {
+      const res = await fetch('/api/admin/rooms', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingRoom.id, name: roomForm.name.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setRooms(prev => prev.map(r => r.id === editingRoom.id ? json : r))
+      setEditingRoom(null)
+    } catch (err) { alert('Failed: ' + (err instanceof Error ? err.message : String(err))) }
+    finally { setRoomSaving(false) }
+  }
+
+  async function handleToggleRoom(room: Room) {
+    try {
+      const res = await fetch('/api/admin/rooms', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: room.id, active: !room.active }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setRooms(prev => prev.map(r => r.id === room.id ? json : r))
+    } catch (err) { alert('Failed: ' + (err instanceof Error ? err.message : String(err))) }
+  }
+
+  async function handleDeleteRoom(id: string) {
+    if (!confirm('Delete this room? This only removes it from the configuration — existing guest records are kept.')) return
+    try {
+      const res = await fetch(`/api/admin/rooms?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) { const j = await res.json(); throw new Error(j.error) }
+      setRooms(prev => prev.filter(r => r.id !== id))
+    } catch (err) { alert('Failed: ' + (err instanceof Error ? err.message : String(err))) }
+  }
+
   // ── Shared UI ─────────────────────────────────────────────────────────────
   function StatusIcon({ s }: { s: ResetStatus }) {
     if (s === 'loading') return <Loader2      size={13} className="animate-spin text-blue-500" />
@@ -598,6 +669,62 @@ export default function SettingsClient({
                   </div>
                 ))}
               </div>
+            </section>
+
+            {/* ── Room Configuration ────────────────────────────────────── */}
+            <section id="rooms" className="scroll-mt-6 bg-white rounded-xl border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <DoorOpen size={16} className="text-slate-500" />
+                  <h2 className="text-sm font-semibold text-slate-700">Room Configuration</h2>
+                  <span className="text-xs text-slate-400">({rooms.length} rooms)</span>
+                </div>
+                <button
+                  onClick={() => { setRoomForm({ number: '', name: '' }); setShowAddRoom(true) }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+                >
+                  <Plus size={13} /> Add Room
+                </button>
+              </div>
+
+              <div className="divide-y divide-slate-100 border border-slate-100 rounded-lg overflow-hidden">
+                {rooms.length === 0 ? (
+                  <p className="text-sm text-slate-400 py-6 text-center">No rooms configured yet. Add your first room above.</p>
+                ) : rooms.map(r => (
+                  <div key={r.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+                    <span className="w-8 text-xs font-mono font-semibold text-slate-400 shrink-0">#{r.number}</span>
+                    <span className={`flex-1 text-sm font-medium ${r.active ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
+                      {r.name}
+                    </span>
+                    <button
+                      onClick={() => handleToggleRoom(r)}
+                      className={`px-2.5 py-0.5 text-xs font-medium rounded-full transition-colors ${
+                        r.active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      }`}
+                    >
+                      {r.active ? 'Active' : 'Inactive'}
+                    </button>
+                    <button
+                      onClick={() => { setEditingRoom(r); setRoomForm({ number: r.number, name: r.name }) }}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Rename"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRoom(r.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-slate-400 mt-3">
+                Inactive rooms are hidden from booking forms and the occupancy calendar. Room numbers link to existing guest records.
+              </p>
             </section>
 
             {/* ── Role Permissions ──────────────────────────────────────── */}
@@ -943,6 +1070,64 @@ export default function SettingsClient({
               </div>
             </form>
           )}
+        </Modal>
+      )}
+
+      {showAddRoom && (
+        <Modal title="Add Room" onClose={() => setShowAddRoom(false)}>
+          <form onSubmit={handleAddRoom} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Room Number</label>
+                <input
+                  type="number" min={1} required
+                  value={roomForm.number}
+                  onChange={e => setRoomForm(f => ({ ...f, number: +e.target.value || '' }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. 11"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Room Name</label>
+                <input
+                  required
+                  value={roomForm.name}
+                  onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Room 11 – Deluxe Suite"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-slate-400">The room number is used in guest records. Use a descriptive name to identify the room easily.</p>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setShowAddRoom(false)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900">Cancel</button>
+              <button type="submit" disabled={roomSaving} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg">
+                {roomSaving ? 'Saving…' : 'Add Room'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {editingRoom && (
+        <Modal title={`Rename Room #${editingRoom.number}`} onClose={() => setEditingRoom(null)}>
+          <form onSubmit={handleUpdateRoom} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Room Name</label>
+              <input
+                required
+                value={roomForm.name}
+                onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setEditingRoom(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900">Cancel</button>
+              <button type="submit" disabled={roomSaving} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg">
+                {roomSaving ? 'Saving…' : 'Save Name'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
 

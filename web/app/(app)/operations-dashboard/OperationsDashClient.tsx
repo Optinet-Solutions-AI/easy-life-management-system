@@ -3,10 +3,9 @@
 import { useState, useMemo } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
+import { useRooms } from '@/context/RoomsContext'
 import { DEPARTMENTS } from '@/types'
 import StatCard from '@/components/StatCard'
-
-const TOTAL_ROOMS = 10
 const TM30_URL = 'https://extranet.immigration.go.th/fn24online/fn24/main/home.xhtml'
 
 type Tab = 'today' | 'bookings' | 'revenue' | 'tasks' | 'operations' | 'cash'
@@ -53,6 +52,7 @@ const ACCOUNT_STYLE: Record<string, { emoji: string; bg: string }> = {
 export default function OperationsDashClient({ guests, todos, revenues, accountBalances, noInvoiceTotal, expenses }: Props) {
   const [tab, setTab] = useState<Tab>('today')
   const { format } = useCurrency()
+  const TOTAL_ROOMS = useRooms().filter(r => r.active).length || 10
 
   const today = new Date()
   const todayStr = today.toISOString().slice(0, 10)

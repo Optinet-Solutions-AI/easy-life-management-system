@@ -2,10 +2,9 @@
 
 import { useState, useMemo } from 'react'
 import { useCurrency } from '@/context/CurrencyContext'
+import { useRooms } from '@/context/RoomsContext'
 import { SHAREHOLDERS, MONTHS } from '@/types'
 import StatCard from '@/components/StatCard'
-
-const TOTAL_ROOMS = 10
 
 const OPEX_ORDER = [
   'Staff Costs', 'Rooms Department', 'Utilities', 'Maintenance & Repairs',
@@ -70,6 +69,7 @@ const TABS: { id: Tab; label: string }[] = [
 export default function ShareholderDashClient({ expenses, revenues, contributions, accountBalances, budgetRevenue, budgetExpenses, guests, shareholders, currentYear }: Props) {
   const [tab, setTab] = useState<Tab>('financial')
   const { format } = useCurrency()
+  const TOTAL_ROOMS = useRooms().filter(r => r.active).length || 10
 
   const today = new Date()
   const currentMonth = today.getMonth()

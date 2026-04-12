@@ -4,9 +4,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Guest } from '@/types'
 import PageHeader from '@/components/PageHeader'
-
-const TOTAL_ROOMS = 10
-const ROOMS = Array.from({ length: TOTAL_ROOMS }, (_, i) => i + 1)
+import { useRooms } from '@/context/RoomsContext'
 
 const COLORS = [
   'bg-blue-200 text-blue-800',
@@ -22,6 +20,8 @@ const COLORS = [
 ]
 
 export default function OccupancyClient({ guests }: { guests: Guest[] }) {
+  const activeRooms = useRooms().filter(r => r.active)
+  const TOTAL_ROOMS = activeRooms.length || 10
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -134,13 +134,13 @@ export default function OccupancyClient({ guests }: { guests: Guest[] }) {
             </tr>
           </thead>
           <tbody>
-            {ROOMS.map(room => (
-              <tr key={room} className="border-b border-slate-100">
+            {activeRooms.map(r => (
+              <tr key={r.number} className="border-b border-slate-100">
                 <td className="px-3 py-2 font-semibold text-slate-700 sticky left-0 bg-white border-r border-slate-100">
-                  Room {room}
+                  {r.name}
                 </td>
                 {days.map(d => {
-                  const guest = getGuestForDay(room, d)
+                  const guest = getGuestForDay(r.number, d)
                   const date = new Date(year, month, d)
                   const isCheckIn = guest && new Date(guest.check_in).toDateString() === date.toDateString()
                   const isCheckOut = guest && new Date(guest.check_out).toDateString() === new Date(year, month, d + 1).toDateString()

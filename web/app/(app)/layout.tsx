@@ -2,6 +2,11 @@ import Sidebar from '@/components/Sidebar'
 import { getSession } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { PermissionsProvider, type Perm } from '@/context/PermissionsContext'
+import { RoomsProvider, type Room } from '@/context/RoomsContext'
+
+const FALLBACK_ROOMS: Room[] = Array.from({ length: 10 }, (_, i) => ({
+  id: String(i + 1), number: i + 1, name: `Room ${i + 1}`, active: true,
+}))
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getSession()
@@ -23,14 +28,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
+  // Fetch rooms; fall back to 1-10 if the table hasn't been created yet
+  const { data: roomsData } = await supabase.from('rooms').select('*').order('number')
+  const rooms: Room[] = roomsData && roomsData.length > 0 ? roomsData : FALLBACK_ROOMS
+
   return (
     <PermissionsProvider perms={permsMap} role={user?.role ?? ''}>
-      <div className="h-full bg-slate-50 text-slate-900 antialiased lg:flex">
-        <Sidebar user={user ?? undefined} />
-        <main className="flex-1 overflow-auto pt-14 lg:pt-0 min-h-screen">
-          {children}
-        </main>
-      </div>
+      <RoomsProvider rooms={rooms}>
+        <div className="h-full bg-slate-50 text-slate-900 antialiased lg:flex">
+          <Sidebar user={user ?? undefined} />
+          <main className="flex-1 overflow-auto pt-14 lg:pt-0 min-h-screen">
+            {children}
+          </main>
+        </div>
+      </RoomsProvider>
     </PermissionsProvider>
   )
 }

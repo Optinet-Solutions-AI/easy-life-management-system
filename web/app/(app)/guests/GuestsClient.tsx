@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, ShieldCheck, ShieldAlert, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, FileText, Mail, ExternalLink } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, PAYMENT_METHODS, ROOMS } from '@/types'
+import { formatDate, PAYMENT_METHODS } from '@/types'
+import { useRooms } from '@/context/RoomsContext'
 import type { Guest } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -35,6 +36,7 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
   }, [initialGuests])
 
   const [guests, setGuests] = useState<Guest[]>(allGuests)
+  const activeRooms = useRooms().filter(r => r.active)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Guest | null>(null)
   const [form, setForm] = useState<Partial<Guest>>(EMPTY)
@@ -375,7 +377,7 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
             <div>
               <label className="label">Room</label>
               <select className="input" value={form.room} onChange={e => setForm(f => ({ ...f, room: +e.target.value }))}>
-                {ROOMS.map(r => <option key={r} value={r}>Room {r}</option>)}
+                {activeRooms.map(r => <option key={r.number} value={r.number}>{r.name}</option>)}
               </select>
             </div>
             <div>

@@ -1,6 +1,7 @@
 import { getSession } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import SettingsClient from './SettingsClient'
+import type { Room } from '@/context/RoomsContext'
 
 export default async function SettingsPage() {
   const session = await getSession()
@@ -8,14 +9,17 @@ export default async function SettingsPage() {
 
   let users: { id: string; username: string; display_name: string; role: string; created_at: string }[] = []
   let permissions: { role: string; module: string; can_view: boolean; can_add: boolean; can_edit: boolean; can_delete: boolean }[] = []
+  let rooms: Room[] = []
 
   if (isAdmin) {
-    const [usersRes, permsRes] = await Promise.all([
+    const [usersRes, permsRes, roomsRes] = await Promise.all([
       supabase.from('users').select('id, username, display_name, role, created_at').order('created_at', { ascending: true }),
       supabase.from('role_permissions').select('role, module, can_view, can_add, can_edit, can_delete'),
+      supabase.from('rooms').select('*').order('number'),
     ])
     users       = usersRes.data ?? []
     permissions = permsRes.data ?? []
+    rooms       = roomsRes.data ?? []
   }
 
   return (
@@ -25,6 +29,7 @@ export default async function SettingsPage() {
         currentUserId={session?.id ?? ''}
         initialUsers={users}
         initialPermissions={permissions}
+        initialRooms={rooms}
       />
     </div>
   )
