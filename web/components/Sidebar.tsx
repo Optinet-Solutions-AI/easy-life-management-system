@@ -28,33 +28,45 @@ import {
   MessageSquareWarning,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
+import { usePermissions } from '@/context/PermissionsContext'
 import type { SessionUser } from '@/lib/auth'
 
-const nav = [
-  { href: '/', label: 'Overview', icon: LayoutDashboard },
-  { href: '/shareholder-dashboard', label: 'Shareholder', icon: BarChart3 },
-  { href: '/operations-dashboard', label: 'GM Dashboard', icon: Gauge },
-  { href: '/guests', label: 'Guests', icon: Users },
-  { href: '/occupancy', label: 'Occupancy', icon: CalendarDays },
-  { href: '/expenses', label: 'Expenses', icon: Receipt },
-  { href: '/revenue', label: 'Revenue', icon: TrendingUp },
-  { href: '/founding', label: 'Founding', icon: Landmark },
-  { href: '/shareholder-work', label: 'Shareholder Work', icon: Briefcase },
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
-  { href: '/budget', label: 'Budget', icon: PieChart },
-  { href: '/shareholder-profiles', label: 'SH Profiles', icon: UserCircle2 },
-  { href: '/shareholder-meetings', label: 'SH Meetings', icon: CalendarRange },
-  { href: '/staff-hours', label: 'Staff Hours', icon: Clock },
-  { href: '/legal', label: 'Legal', icon: Scale },
-  { href: '/complaints', label: 'Complaints', icon: MessageSquareWarning },
-  { href: '/settings', label: 'Admin Settings', icon: Settings },
+type NavItem = {
+  href: string
+  label: string
+  icon: React.FC<{ size?: number }>
+  moduleKey?: string
+  adminOnly?: boolean
+}
+
+const nav: NavItem[] = [
+  { href: '/',                      label: 'Overview',         icon: LayoutDashboard, moduleKey: 'overview' },
+  { href: '/shareholder-dashboard', label: 'Shareholder',      icon: BarChart3,       moduleKey: 'shareholder_dashboard' },
+  { href: '/operations-dashboard',  label: 'GM Dashboard',     icon: Gauge,           moduleKey: 'gm_dashboard' },
+  { href: '/guests',                label: 'Guests',           icon: Users,           moduleKey: 'guests' },
+  { href: '/occupancy',             label: 'Occupancy',        icon: CalendarDays,    moduleKey: 'occupancy' },
+  { href: '/expenses',              label: 'Expenses',         icon: Receipt,         moduleKey: 'expenses' },
+  { href: '/revenue',               label: 'Revenue',          icon: TrendingUp,      moduleKey: 'revenue' },
+  { href: '/founding',              label: 'Founding',         icon: Landmark,        moduleKey: 'founding' },
+  { href: '/shareholder-work',      label: 'Shareholder Work', icon: Briefcase,       moduleKey: 'shareholder_work' },
+  { href: '/tasks',                 label: 'Tasks',            icon: CheckSquare,     moduleKey: 'tasks' },
+  { href: '/budget',                label: 'Budget',           icon: PieChart,        moduleKey: 'budget' },
+  { href: '/shareholder-profiles',  label: 'SH Profiles',     icon: UserCircle2,     moduleKey: 'shareholder_profiles' },
+  { href: '/shareholder-meetings',  label: 'SH Meetings',     icon: CalendarRange,   moduleKey: 'shareholder_meetings' },
+  { href: '/staff-hours',           label: 'Staff Hours',      icon: Clock,           moduleKey: 'staff_hours' },
+  { href: '/legal',                 label: 'Legal',            icon: Scale,           moduleKey: 'legal' },
+  { href: '/complaints',            label: 'Complaints',       icon: MessageSquareWarning, moduleKey: 'complaints' },
+  { href: '/settings',              label: 'Admin Settings',   icon: Settings },
 ]
 
-function NavLinks({ onNav }: { onNav?: () => void }) {
+function NavLinks({ onNav, userRole }: { onNav?: () => void; userRole?: string }) {
   const pathname = usePathname()
+  const { can } = usePermissions()
   return (
     <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
-      {nav.map(({ href, label, icon: Icon }) => {
+      {nav.map(({ href, label, icon: Icon, moduleKey, adminOnly }) => {
+        if (adminOnly && userRole !== 'Admin') return null
+        if (moduleKey && userRole && userRole !== 'Admin' && !can(moduleKey, 'view')) return null
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
         return (
           <Link
@@ -223,14 +235,14 @@ export default function Sidebar({ user }: { user?: SessionUser }) {
             <X size={20} />
           </button>
         </div>
-        <NavLinks onNav={() => setOpen(false)} />
+        <NavLinks onNav={() => setOpen(false)} userRole={user?.role} />
         <UserFooter user={user} />
       </aside>
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-56 shrink-0 bg-slate-900 text-slate-100 flex-col h-full">
         <SidebarHeader />
-        <NavLinks />
+        <NavLinks userRole={user?.role} />
         <UserFooter user={user} />
       </aside>
     </>

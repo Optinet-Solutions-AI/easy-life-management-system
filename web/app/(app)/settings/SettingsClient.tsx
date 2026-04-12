@@ -38,15 +38,64 @@ const TABLES = [
   { key: 'shareholder_profiles',   label: 'SH Profiles',            desc: 'Shareholder profile data' },
 ]
 
+// ── Permissions ───────────────────────────────────────────────────────────────
+
+const PERM_ROLES = ['General Manager', 'Shareholder', 'Lawyer', 'Accountant', 'Staff']
+
+const PERM_MODULES = [
+  { key: 'overview',              label: 'Overview' },
+  { key: 'shareholder_dashboard', label: 'Shareholder Dashboard' },
+  { key: 'gm_dashboard',          label: 'GM Dashboard' },
+  { key: 'guests',                label: 'Guests' },
+  { key: 'occupancy',             label: 'Occupancy' },
+  { key: 'expenses',              label: 'Expenses' },
+  { key: 'revenue',               label: 'Revenue' },
+  { key: 'founding',              label: 'Founding' },
+  { key: 'shareholder_work',      label: 'Shareholder Work' },
+  { key: 'tasks',                 label: 'Tasks' },
+  { key: 'budget',                label: 'Budget' },
+  { key: 'shareholder_profiles',  label: 'SH Profiles' },
+  { key: 'shareholder_meetings',  label: 'SH Meetings' },
+  { key: 'staff_hours',           label: 'Staff Hours' },
+  { key: 'legal',                 label: 'Legal' },
+  { key: 'complaints',            label: 'Complaints' },
+]
+
+type PermAction = 'can_view' | 'can_add' | 'can_edit' | 'can_delete'
+const PERM_ACTIONS: { key: PermAction; label: string }[] = [
+  { key: 'can_view',   label: 'View'   },
+  { key: 'can_add',    label: 'Add'    },
+  { key: 'can_edit',   label: 'Edit'   },
+  { key: 'can_delete', label: 'Delete' },
+]
+
+type Perm = { can_view: boolean; can_add: boolean; can_edit: boolean; can_delete: boolean }
+type PermsMap = Record<string, Record<string, Perm>> // [role][module]
+
+interface PermRow {
+  role: string; module: string
+  can_view: boolean; can_add: boolean; can_edit: boolean; can_delete: boolean
+}
+
+function buildPermsMap(rows: PermRow[]): PermsMap {
+  const map: PermsMap = {}
+  for (const r of rows) {
+    if (!map[r.role]) map[r.role] = {}
+    map[r.role][r.module] = { can_view: r.can_view, can_add: r.can_add, can_edit: r.can_edit, can_delete: r.can_delete }
+  }
+  return map
+}
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 
-const ROLES = ['Admin', 'General Manager', 'Shareholder', 'Lawyer', 'Accountant']
+const ROLES = ['Admin', 'General Manager', 'Shareholder', 'Lawyer', 'Accountant', 'Staff']
 const ROLE_COLORS: Record<string, string> = {
   'Admin':           'bg-purple-100 text-purple-700',
   'Shareholder':     'bg-blue-100 text-blue-700',
   'General Manager': 'bg-teal-100 text-teal-700',
   'Lawyer':          'bg-amber-100 text-amber-700',
   'Accountant':      'bg-orange-100 text-orange-700',
+  'Staff':           'bg-slate-100 text-slate-700',
 }
 
 interface User {
@@ -67,11 +116,12 @@ const EMPTY_ADD: AddForm = { username: '', display_name: '', role: 'Shareholder'
 // ── Nav items ─────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { id: 'password', label: 'Update Password', icon: KeyRound },
-  { id: 'users',    label: 'User Management', icon: UserCog  },
-  { id: 'import',   label: 'Import Data',     icon: Upload   },
-  { id: 'export',   label: 'Export Data',     icon: Download },
-  { id: 'reset',    label: 'Reset Data',      icon: Trash2   },
+  { id: 'password',    label: 'Update Password',  icon: KeyRound   },
+  { id: 'users',       label: 'User Management',  icon: UserCog    },
+  { id: 'permissions', label: 'Role Permissions', icon: ShieldCheck },
+  { id: 'import',      label: 'Import Data',      icon: Upload     },
+  { id: 'export',      label: 'Export Data',      icon: Download   },
+  { id: 'reset',       label: 'Reset Data',       icon: Trash2     },
 ]
 
 type ResetStatus = 'idle' | 'loading' | 'done' | 'error'
@@ -82,10 +132,12 @@ export default function SettingsClient({
   isAdmin,
   currentUserId,
   initialUsers,
+  initialPermissions,
 }: {
   isAdmin: boolean
   currentUserId: string
   initialUsers: User[]
+  initialPermissions: PermRow[]
 }) {
 
   // ── Active nav section ────────────────────────────────────────────────────
@@ -149,6 +201,12 @@ export default function SettingsClient({
   const [resetStatus, setResetStatus] = useState<Record<string, ResetStatus>>({})
   const [resetLog,    setResetLog]    = useState<Record<string, string>>({})
   const [confirmAll,  setConfirmAll]  = useState(false)
+
+  // ── Permissions state ─────────────────────────────────────────────────────
+  const [permsMap,     setPermsMap]     = useState<PermsMap>(() => buildPermsMap(initialPermissions))
+  const [selectedRole, setSelectedRole] = useState(PERM_ROLES[0])
+  const [permsSaving,  setPermsSaving]  = useState(false)
+  const [permsSaved,   setPermsSaved]   = useState(false)
 
   // ── Import state ──────────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState<ResetStatus>('idle')
@@ -274,6 +332,76 @@ export default function SettingsClient({
     const data = await res.json()
     if (!res.ok) { setImportStatus('error'); setImportLog([data.error ?? 'Import failed']); return }
     setImportStatus('done'); setImportLog(data.log ?? [])
+  }
+
+  // ── Handlers: permissions ────────────────────────────────────────────────
+  function getPerm(role: string, module: string, action: PermAction): boolean {
+    return permsMap[role]?.[module]?.[action] ?? true
+  }
+
+  function setPerm(role: string, module: string, action: PermAction, value: boolean) {
+    setPermsMap(prev => {
+      const existing: Perm = prev[role]?.[module] ?? { can_view: true, can_add: true, can_edit: true, can_delete: true }
+      return {
+        ...prev,
+        [role]: { ...(prev[role] ?? {}), [module]: { ...existing, [action]: value } },
+      }
+    })
+  }
+
+  function setRowAll(role: string, module: string, value: boolean) {
+    setPermsMap(prev => ({
+      ...prev,
+      [role]: {
+        ...(prev[role] ?? {}),
+        [module]: { can_view: value, can_add: value, can_edit: value, can_delete: value },
+      },
+    }))
+  }
+
+  function setColumnAll(action: PermAction, value: boolean) {
+    setPermsMap(prev => {
+      const rp = { ...(prev[selectedRole] ?? {}) }
+      for (const m of PERM_MODULES) {
+        const existing: Perm = rp[m.key] ?? { can_view: true, can_add: true, can_edit: true, can_delete: true }
+        rp[m.key] = { ...existing, [action]: value }
+      }
+      return { ...prev, [selectedRole]: rp }
+    })
+  }
+
+  function setAllPerms(value: boolean) {
+    setPermsMap(prev => {
+      const rp: Record<string, Perm> = {}
+      for (const m of PERM_MODULES) {
+        rp[m.key] = { can_view: value, can_add: value, can_edit: value, can_delete: value }
+      }
+      return { ...prev, [selectedRole]: rp }
+    })
+  }
+
+  async function savePermissions() {
+    setPermsSaving(true); setPermsSaved(false)
+    const rows: PermRow[] = []
+    for (const role of PERM_ROLES) {
+      for (const mod of PERM_MODULES) {
+        rows.push({
+          role, module: mod.key,
+          can_view:   permsMap[role]?.[mod.key]?.can_view   ?? true,
+          can_add:    permsMap[role]?.[mod.key]?.can_add    ?? true,
+          can_edit:   permsMap[role]?.[mod.key]?.can_edit   ?? true,
+          can_delete: permsMap[role]?.[mod.key]?.can_delete ?? true,
+        })
+      }
+    }
+    try {
+      await fetch('/api/admin/permissions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rows),
+      })
+      setPermsSaved(true)
+      setTimeout(() => setPermsSaved(false), 3000)
+    } finally { setPermsSaving(false) }
   }
 
   // ── Shared UI ─────────────────────────────────────────────────────────────
@@ -470,6 +598,115 @@ export default function SettingsClient({
                   </div>
                 ))}
               </div>
+            </section>
+
+            {/* ── Role Permissions ──────────────────────────────────────── */}
+            <section id="permissions" className="scroll-mt-6 bg-white rounded-xl border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-slate-500" />
+                  <h2 className="text-sm font-semibold text-slate-700">Role Permissions</h2>
+                  <span className="text-xs text-slate-400">Admin always has full access</span>
+                </div>
+                <button
+                  onClick={savePermissions} disabled={permsSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  {permsSaving ? <><Loader2 size={12} className="animate-spin" /> Saving…</> : 'Save Permissions'}
+                </button>
+              </div>
+
+              {permsSaved && (
+                <div className="mb-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+                  <CheckCircle size={14} /> Permissions saved successfully.
+                </div>
+              )}
+
+              {/* Role tabs */}
+              <div className="flex gap-1 mb-4 border-b border-slate-200 pb-0">
+                {PERM_ROLES.map(role => (
+                  <button
+                    key={role}
+                    onClick={() => setSelectedRole(role)}
+                    className={`px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px ${
+                      selectedRole === role
+                        ? 'border-blue-600 text-blue-700 bg-blue-50'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+
+              {/* Permissions matrix */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-2 pr-4 font-semibold text-slate-600 w-full">Module</th>
+                      {PERM_ACTIONS.map(({ key, label }) => (
+                        <th key={key} className="py-2 w-16 text-center">
+                          <div className="flex flex-col items-center gap-1.5">
+                            <span className="font-semibold text-slate-600">{label}</span>
+                            <input
+                              type="checkbox"
+                              className="w-3.5 h-3.5 accent-blue-600 cursor-pointer"
+                              title={`Toggle all ${label}`}
+                              checked={PERM_MODULES.every(m => getPerm(selectedRole, m.key, key))}
+                              onChange={e => setColumnAll(key, e.target.checked)}
+                            />
+                          </div>
+                        </th>
+                      ))}
+                      <th className="py-2 w-14 text-center">
+                        <div className="flex flex-col items-center gap-1.5">
+                          <span className="font-semibold text-slate-500">All</span>
+                          <input
+                            type="checkbox"
+                            className="w-3.5 h-3.5 accent-blue-600 cursor-pointer"
+                            title="Toggle all permissions for all modules"
+                            checked={PERM_MODULES.every(m => PERM_ACTIONS.every(a => getPerm(selectedRole, m.key, a.key)))}
+                            onChange={e => setAllPerms(e.target.checked)}
+                          />
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {PERM_MODULES.map(mod => {
+                      const rowAll = PERM_ACTIONS.every(a => getPerm(selectedRole, mod.key, a.key))
+                      return (
+                        <tr key={mod.key} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-2 pr-4 font-medium text-slate-700">{mod.label}</td>
+                          {PERM_ACTIONS.map(({ key }) => (
+                            <td key={key} className="py-2 text-center">
+                              <input
+                                type="checkbox"
+                                className="w-3.5 h-3.5 accent-blue-600 cursor-pointer"
+                                checked={getPerm(selectedRole, mod.key, key)}
+                                onChange={e => setPerm(selectedRole, mod.key, key, e.target.checked)}
+                              />
+                            </td>
+                          ))}
+                          <td className="py-2 text-center">
+                            <input
+                              type="checkbox"
+                              className="w-3.5 h-3.5 accent-slate-400 cursor-pointer"
+                              checked={rowAll}
+                              onChange={e => setRowAll(selectedRole, mod.key, e.target.checked)}
+                            />
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="mt-3 text-xs text-slate-400">
+                Changes affect all users with this role. Use <span className="font-medium">View</span> to show/hide modules in the sidebar.
+              </p>
             </section>
 
             {/* ── Import Data ───────────────────────────────────────────── */}
