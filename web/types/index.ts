@@ -206,6 +206,25 @@ export interface StaffHour {
 
 export const STAFF_DEPARTMENTS = ['Operations', 'Housekeeping', 'Reception', 'Maintenance', 'Kitchen', 'Management', 'Other']
 
+export interface Complaint {
+  id: string
+  date: string
+  guest_name: string
+  room: number | null
+  category: string | null
+  description: string
+  severity: string
+  status: string
+  resolution_notes: string | null
+  resolved_at: string | null
+  filed_by: string | null
+  created_at: string
+}
+
+export const COMPLAINT_CATEGORIES = ['Cleanliness', 'Noise', 'Service', 'Amenities', 'Maintenance', 'Food & Beverage', 'Safety', 'Other']
+export const COMPLAINT_SEVERITIES = ['Low', 'Medium', 'High', 'Critical']
+export const COMPLAINT_STATUSES  = ['Open', 'In Progress', 'Resolved', 'Closed']
+
 export function formatTHB(amount: number | null | undefined): string {
   if (amount == null) return '—'
   return new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 }).format(amount)

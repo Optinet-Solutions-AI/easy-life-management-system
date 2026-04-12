@@ -5,22 +5,13 @@ import { Plus, KeyRound, Trash2, ShieldCheck, Search } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 
-const ROLES = ['admin', 'shareholder', 'gm', 'lawyer', 'accountant', 'staff']
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Admin',
-  shareholder: 'Shareholder',
-  gm: 'General Manager',
-  lawyer: 'Lawyer',
-  accountant: 'Accountant',
-  staff: 'Staff',
-}
+const ROLES = ['Admin', 'General Manager', 'Shareholder', 'Lawyer', 'Accountant']
 const ROLE_COLORS: Record<string, string> = {
-  admin: 'bg-purple-100 text-purple-700',
-  shareholder: 'bg-blue-100 text-blue-700',
-  gm: 'bg-teal-100 text-teal-700',
-  lawyer: 'bg-amber-100 text-amber-700',
-  accountant: 'bg-orange-100 text-orange-700',
-  staff: 'bg-slate-100 text-slate-600',
+  'Admin':           'bg-purple-100 text-purple-700',
+  'Shareholder':     'bg-blue-100 text-blue-700',
+  'General Manager': 'bg-teal-100 text-teal-700',
+  'Lawyer':          'bg-amber-100 text-amber-700',
+  'Accountant':      'bg-orange-100 text-orange-700',
 }
 
 interface User {
@@ -39,7 +30,7 @@ interface AddForm {
   confirm_password: string
 }
 
-const EMPTY_ADD: AddForm = { username: '', display_name: '', role: 'staff', password: '', confirm_password: '' }
+const EMPTY_ADD: AddForm = { username: '', display_name: '', role: 'Shareholder', password: '', confirm_password: '' }
 
 export default function UsersClient({ initialUsers, currentUserId }: { initialUsers: User[]; currentUserId: string }) {
   const [users, setUsers] = useState<User[]>(initialUsers)
@@ -197,7 +188,7 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
                 <td className="px-4 py-3 text-slate-500 font-mono text-xs">{u.username}</td>
                 <td className="px-4 py-3">
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${ROLE_COLORS[u.role] ?? 'bg-slate-100 text-slate-600'}`}>
-                    {ROLE_LABELS[u.role] ?? u.role}
+                    {u.role}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-500 text-xs">
@@ -244,7 +235,7 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
                 <p className="text-xs text-slate-500 font-mono mt-0.5">{u.username}</p>
               </div>
               <span className={`text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${ROLE_COLORS[u.role] ?? 'bg-slate-100 text-slate-600'}`}>
-                {ROLE_LABELS[u.role] ?? u.role}
+                {u.role}
               </span>
             </div>
             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
@@ -299,7 +290,7 @@ export default function UsersClient({ initialUsers, currentUserId }: { initialUs
                   onChange={e => setAddForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 async function requireAdmin() {
   const user = await getSession()
   if (!user) return null
-  if (user.role !== 'admin') return null
+  if (user.role !== 'Admin') return null
   return user
 }
 

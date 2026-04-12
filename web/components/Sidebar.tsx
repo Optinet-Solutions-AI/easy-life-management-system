@@ -24,8 +24,8 @@ import {
   Clock,
   RotateCcw,
   Scale,
-  KeyRound,
-  UserCog,
+  Settings,
+  MessageSquareWarning,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import type { SessionUser } from '@/lib/auth'
@@ -46,16 +46,15 @@ const nav = [
   { href: '/shareholder-meetings', label: 'SH Meetings', icon: CalendarRange },
   { href: '/staff-hours', label: 'Staff Hours', icon: Clock },
   { href: '/legal', label: 'Legal', icon: Scale },
-  { href: '/change-password', label: 'Change Password', icon: KeyRound },
-  { href: '/admin/users', label: 'User Management', icon: UserCog, adminOnly: true },
+  { href: '/complaints', label: 'Complaints', icon: MessageSquareWarning },
+  { href: '/settings', label: 'Admin Settings', icon: Settings },
 ]
 
-function NavLinks({ onNav, userRole }: { onNav?: () => void; userRole?: string }) {
+function NavLinks({ onNav }: { onNav?: () => void }) {
   const pathname = usePathname()
   return (
     <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
-      {nav.map(({ href, label, icon: Icon, adminOnly }) => {
-        if (adminOnly && userRole !== 'admin') return null
+      {nav.map(({ href, label, icon: Icon }) => {
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
         return (
           <Link
@@ -224,14 +223,14 @@ export default function Sidebar({ user }: { user?: SessionUser }) {
             <X size={20} />
           </button>
         </div>
-        <NavLinks onNav={() => setOpen(false)} userRole={user?.role} />
+        <NavLinks onNav={() => setOpen(false)} />
         <UserFooter user={user} />
       </aside>
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-56 shrink-0 bg-slate-900 text-slate-100 flex-col h-full">
         <SidebarHeader />
-        <NavLinks userRole={user?.role} />
+        <NavLinks />
         <UserFooter user={user} />
       </aside>
     </>

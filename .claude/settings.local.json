@@ -14,7 +14,10 @@
       "Read(//c/Users/Chris-Optinet/**)",
       "Bash(python3 -c ':*)",
       "Bash(cd /tmp)",
-      "Bash(node import-from-excel.js)"
+      "Bash(node import-from-excel.js)",
+      "Bash(ls c:/Users/Chris-Optinet/elms/*.py)",
+      "Bash(ls c:/Users/Chris-Optinet/elms/*.xlsx)",
+      "Bash(xargs grep:*)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Chris-Optinet\\elms\\web\\app\\api",

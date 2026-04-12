@@ -123,6 +123,10 @@ export async function GET(
         .header-left h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
         .header-left p { font-size: 11px; color: #A3CCB4; margin-bottom: 4px; font-weight: 400; letter-spacing: 0.2px; }
         .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 15px; }
+        .logo-img {
+            width: 90px; height: 90px; border-radius: 50%;
+            object-fit: cover; border: 2px solid #5A9973;
+        }
         .logo-circle {
             width: 90px; height: 90px; border-radius: 50%;
             border: 2px solid #5A9973;
@@ -203,7 +207,8 @@ export async function GET(
             <p>Taxpayer ID: 0105568076277&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;Branch: Koh Phangan&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;info@DreamT-CO.com</p>
         </div>
         <div class="header-right">
-            <div class="logo-circle">DREAM-T</div>
+            <img src="/logo.png" alt="Dream-T Logo" class="logo-img" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'" />
+            <div id="logo-fallback" class="logo-circle" style="display:none">DREAM-T</div>
             <div class="badge">TAX INVOICE / RECEIPT</div>
         </div>
     </header>
