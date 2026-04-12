@@ -56,21 +56,66 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
   const computedStay = form.amount_thb_day && nights ? form.amount_thb_day * nights : form.amount_thb_stay ?? 0
   const balance = (form.amount_thb_stay ?? computedStay) - (form.payment ?? 0)
 
+  // Maps payment method to account_balances.account_type
+  const METHOD_TO_ACCOUNT: Record<string, string> = {
+    'Cash': 'Cash',
+    'Bank Transfer': 'Bank',
+    'Revolute': 'Revolut',
+    'Wise': 'Wise',
+    'Card': 'Bank',
+    'General Manager': 'GM Bank',
+  }
+
+  async function adjustBalance(method: string | null | undefined, delta: number) {
+    if (!method || !delta) return
+    const accountType = METHOD_TO_ACCOUNT[method]
+    if (!accountType) return
+    const { data: acc } = await supabase
+      .from('account_balances').select('id, amount').eq('account_type', accountType).single()
+    if (!acc) return
+    await supabase.from('account_balances')
+      .update({ amount: acc.amount + delta, updated_at: new Date().toISOString() })
+      .eq('id', acc.id)
+  }
+
   async function save() {
+    if (!form.guest_name?.trim()) return alert('Guest name is required')
+    if (!form.check_in) return alert('Check-in date is required')
+    if (!form.check_out) return alert('Check-out date is required')
+
     setSaving(true)
-    const payload = {
-      ...form,
-      amount_thb_stay: form.amount_thb_stay ?? (form.amount_thb_day && nights ? form.amount_thb_day * nights : null),
+    try {
+      const payload = {
+        ...form,
+        amount_thb_stay: form.amount_thb_stay ?? (form.amount_thb_day && nights ? form.amount_thb_day * nights : null),
+        // Ensure empty strings become null for optional / date fields
+        paid: form.paid || null,
+        invoice: form.invoice || null,
+        notes: form.notes || null,
+        email: form.email || null,
+        phone: form.phone || null,
+        passport_number: form.passport_number || null,
+        passport_expiry: form.passport_expiry || null,
+      }
+      if (editing) {
+        const { data, error } = await supabase.from('guests').update(payload).eq('id', editing.id).select().single()
+        if (error) throw error
+        if (data) setGuests(prev => prev.map(g => g.id === editing.id ? data : g))
+        // Revert old payment from old account, apply new payment to new account
+        await adjustBalance(editing.paid, -(editing.payment ?? 0))
+        await adjustBalance(payload.paid, payload.payment ?? 0)
+      } else {
+        const { data, error } = await supabase.from('guests').insert(payload).select().single()
+        if (error) throw error
+        if (data) setGuests(prev => [data, ...prev])
+        await adjustBalance(payload.paid, payload.payment ?? 0)
+      }
+      setOpen(false)
+    } catch (err: unknown) {
+      alert('Save failed: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setSaving(false)
     }
-    if (editing) {
-      const { data } = await supabase.from('guests').update(payload).eq('id', editing.id).select().single()
-      if (data) setGuests(prev => prev.map(g => g.id === editing.id ? data : g))
-    } else {
-      const { data } = await supabase.from('guests').insert(payload).select().single()
-      if (data) setGuests(prev => [data, ...prev])
-    }
-    setSaving(false)
-    setOpen(false)
   }
 
   async function remove(id: string) {

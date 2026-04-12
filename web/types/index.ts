@@ -147,7 +147,7 @@ export interface BankBalance {
   notes: string | null
 }
 
-export const SHAREHOLDERS = ['Lorenzo PAGNAN', 'Stella MAROZZI', 'Bruce MIFSUD', 'Hanna PARSONSON']
+export const SHAREHOLDERS = ['Lorenzo PAGNAN', 'Stella MAROZZI', 'Bruce MIFSUD', 'Hanna PARSONSON', 'Nicolo PAGNAN']
 
 export const EXPENSE_CATEGORIES = ['Rent', 'Legal', 'Staff', 'Utilities', 'Maintenance', 'Marketing', 'Operations', 'Other']
 

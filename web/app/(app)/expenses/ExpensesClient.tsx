@@ -171,16 +171,55 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
     setOcrFields(new Set()); setOcrError(null)
   }
 
+  const METHOD_TO_ACCOUNT: Record<string, string> = {
+    'Cash': 'Cash',
+    'Bank Transfer': 'Bank',
+    'Revolute': 'Revolut',
+    'Wise': 'Wise',
+    'Card': 'Bank',
+    'General Manager': 'GM Bank',
+  }
+
+  async function adjustBalance(method: string | null | undefined, delta: number) {
+    if (!method || !delta) return
+    const accountType = METHOD_TO_ACCOUNT[method]
+    if (!accountType) return
+    const { data: acc } = await supabase
+      .from('account_balances').select('id, amount').eq('account_type', accountType).single()
+    if (!acc) return
+    await supabase.from('account_balances')
+      .update({ amount: acc.amount + delta, updated_at: new Date().toISOString() })
+      .eq('id', acc.id)
+  }
+
   async function save() {
     setSaving(true)
-    if (editing) {
-      const { data } = await supabase.from('expenses').update(form).eq('id', editing.id).select().single()
-      if (data) setExpenses(prev => prev.map(e => e.id === editing.id ? data : e))
-    } else {
-      const { data } = await supabase.from('expenses').insert(form).select().single()
-      if (data) setExpenses(prev => [data, ...prev])
+    try {
+      const payload = {
+        ...form,
+        method: form.method || null,
+        payment_date: form.payment_date || null,
+        sent: form.sent || null,
+      }
+      if (editing) {
+        const { data, error } = await supabase.from('expenses').update(payload).eq('id', editing.id).select().single()
+        if (error) throw error
+        if (data) setExpenses(prev => prev.map(e => e.id === editing.id ? data : e))
+        // Only auto-adjust THB expenses (EUR amounts need conversion — skip)
+        if (editing.currency === 'THB') await adjustBalance(editing.method, editing.amount ?? 0)
+        if (payload.currency === 'THB') await adjustBalance(payload.method, -(payload.amount ?? 0))
+      } else {
+        const { data, error } = await supabase.from('expenses').insert(payload).select().single()
+        if (error) throw error
+        if (data) setExpenses(prev => [data, ...prev])
+        if (payload.currency === 'THB') await adjustBalance(payload.method, -(payload.amount ?? 0))
+      }
+      setOpen(false)
+    } catch (err: unknown) {
+      alert('Save failed: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setSaving(false)
     }
-    setSaving(false); setOpen(false)
   }
 
   async function remove(id: string) {
