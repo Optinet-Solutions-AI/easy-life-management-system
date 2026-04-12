@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2, FileText, ChevronUp
 import { supabase } from '@/lib/supabase'
 import { formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, SHAREHOLDERS } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
+import { usePermissions } from '@/context/PermissionsContext'
 import type { Expense } from '@/types'
 import type { OcrResult } from '@/app/api/ocr/route'
 import PageHeader from '@/components/PageHeader'
@@ -20,6 +21,10 @@ const EMPTY: Partial<Expense> = {
 
 export default function ExpensesClient({ initialExpenses }: { initialExpenses: Expense[] }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canAdd    = can('expenses', 'add')
+  const canEdit   = can('expenses', 'edit')
+  const canDelete = can('expenses', 'delete')
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
@@ -266,11 +271,11 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
       <PageHeader
         title="Expenses"
         subtitle={`${expenses.length} records`}
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Expense
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Stats */}
@@ -348,8 +353,8 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
                           <Paperclip size={15} />
                         </a>
                       )}
-                      <button onClick={() => openEdit(e)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                      <button onClick={() => remove(e.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                      {canEdit   && <button onClick={() => openEdit(e)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
+                      {canDelete && <button onClick={() => remove(e.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                     </div>
                   </td>
                 </tr>

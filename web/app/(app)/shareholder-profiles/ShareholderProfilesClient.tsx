@@ -7,6 +7,7 @@ import { formatDate } from '@/types'
 import type { ShareholderProfile } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<ShareholderProfile> = {
   name: '', role: '', bio: '', ownership_pct: undefined, photo_url: '',
@@ -14,6 +15,10 @@ const EMPTY: Partial<ShareholderProfile> = {
 }
 
 export default function ShareholderProfilesClient({ initialProfiles }: { initialProfiles: ShareholderProfile[] }) {
+  const { can } = usePermissions()
+  const canAdd    = can('shareholder_profiles', 'add')
+  const canEdit   = can('shareholder_profiles', 'edit')
+  const canDelete = can('shareholder_profiles', 'delete')
   const [profiles, setProfiles] = useState<ShareholderProfile[]>(initialProfiles)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ShareholderProfile | null>(null)
@@ -80,11 +85,11 @@ export default function ShareholderProfilesClient({ initialProfiles }: { initial
       <PageHeader
         title="Shareholder Profiles"
         subtitle={`${profiles.length} shareholders · ${totalOwnership.toFixed(1)}% ownership recorded`}
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Profile
           </button>
-        }
+        ) : undefined}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-5">
@@ -119,14 +124,12 @@ export default function ShareholderProfilesClient({ initialProfiles }: { initial
                 {p.phone && <p className="text-xs text-slate-500">{p.phone}</p>}
                 {p.joined_date && <p className="text-xs text-slate-400">Joined {formatDate(p.joined_date)}</p>}
               </div>
-              <div className="flex gap-2 mt-4">
-                <button onClick={() => openEdit(p)} className="flex-1 flex items-center justify-center gap-1 text-xs text-slate-600 border border-slate-200 rounded-lg py-1.5 hover:border-blue-400 hover:text-blue-600 transition-colors">
-                  <Pencil size={12} /> Edit
-                </button>
-                <button onClick={() => remove(p.id)} className="flex items-center justify-center text-slate-400 hover:text-red-600 border border-slate-200 rounded-lg px-2.5 py-1.5 hover:border-red-300 transition-colors">
-                  <Trash2 size={12} />
-                </button>
-              </div>
+              {(canEdit || canDelete) && (
+                <div className="flex gap-2 mt-4">
+                  {canEdit   && <button onClick={() => openEdit(p)} className="flex-1 flex items-center justify-center gap-1 text-xs text-slate-600 border border-slate-200 rounded-lg py-1.5 hover:border-blue-400 hover:text-blue-600 transition-colors"><Pencil size={12} /> Edit</button>}
+                  {canDelete && <button onClick={() => remove(p.id)} className="flex items-center justify-center text-slate-400 hover:text-red-600 border border-slate-200 rounded-lg px-2.5 py-1.5 hover:border-red-300 transition-colors"><Trash2 size={12} /></button>}
+                </div>
+              )}
             </div>
           </div>
         ))}

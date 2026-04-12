@@ -17,7 +17,8 @@
       "Bash(node import-from-excel.js)",
       "Bash(ls c:/Users/Chris-Optinet/elms/*.py)",
       "Bash(ls c:/Users/Chris-Optinet/elms/*.xlsx)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(grep -l \"usePermissions\" c:/Users/Chris-Optinet/elms/web/app/**/*Client.tsx)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Chris-Optinet\\elms\\web\\app\\api",

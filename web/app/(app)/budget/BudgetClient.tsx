@@ -9,6 +9,7 @@ import type { BudgetRevenue, BudgetExpense, BudgetRent, BudgetRoomSetup } from '
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 import StatCard from '@/components/StatCard'
+import { usePermissions } from '@/context/PermissionsContext'
 
 type Tab = 'setup' | 'input' | 'control'
 type InputSection = 'revenue' | 'expenses' | 'rent'
@@ -56,6 +57,10 @@ export default function BudgetClient({
   actualExpenses: ActualExpRow[]
 }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canAdd    = can('budget', 'add')
+  const canEdit   = can('budget', 'edit')
+  const canDelete = can('budget', 'delete')
   const [tab, setTab] = useState<Tab>('control')
   const [inputSection, setInputSection] = useState<InputSection>('revenue')
   const [revenue, setRevenue] = useState(initialRevenue)
@@ -276,11 +281,13 @@ export default function BudgetClient({
             <div>
               <p className="text-sm text-slate-600">Define room rate assumptions and target occupancy for <strong>{year}</strong>. These serve as planning references for the Input and Control tabs.</p>
             </div>
-            <button
-              onClick={() => { setEditingId(null); setForm({ year, room_name: ROOMS_LIST[0], high_season_rate_thb: '', low_season_rate_thb: '', target_occupancy_pct: '', notes: '' }); setOpenModal('setup') }}
-              className="shrink-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-              <Plus size={16} /> Add Room
-            </button>
+            {canAdd && (
+              <button
+                onClick={() => { setEditingId(null); setForm({ year, room_name: ROOMS_LIST[0], high_season_rate_thb: '', low_season_rate_thb: '', target_occupancy_pct: '', notes: '' }); setOpenModal('setup') }}
+                className="shrink-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+                <Plus size={16} /> Add Room
+              </button>
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
@@ -314,8 +321,8 @@ export default function BudgetClient({
                     <td className="px-4 py-3 text-slate-500 text-sm">{s.notes ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button onClick={() => { setEditingId(s.id); setForm(s); setOpenModal('setup') }} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>
-                        <button onClick={() => deleteSetup(s.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>
+                        {canEdit   && <button onClick={() => { setEditingId(s.id); setForm(s); setOpenModal('setup') }} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>}
+                        {canDelete && <button onClick={() => deleteSetup(s.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>}
                       </div>
                     </td>
                   </tr>
@@ -358,12 +365,14 @@ export default function BudgetClient({
           {/* Revenue Matrix */}
           {inputSection === 'revenue' && (
             <>
-              <div className="flex justify-end mb-4">
-                <button onClick={() => { setEditingId(null); setForm({ year, month: 1, room_name: ROOMS_LIST[0], amount_thb: 0 }); setOpenModal('revenue') }}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-                  <Plus size={16} /> Add Entry
-                </button>
-              </div>
+              {canAdd && (
+                <div className="flex justify-end mb-4">
+                  <button onClick={() => { setEditingId(null); setForm({ year, month: 1, room_name: ROOMS_LIST[0], amount_thb: 0 }); setOpenModal('revenue') }}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+                    <Plus size={16} /> Add Entry
+                  </button>
+                </div>
+              )}
               <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
                 <table className="w-full text-sm min-w-[900px]">
                   <thead className="bg-slate-50 border-b border-slate-200">
@@ -411,12 +420,14 @@ export default function BudgetClient({
           {/* Expense Items */}
           {inputSection === 'expenses' && (
             <>
-              <div className="flex justify-end mb-4">
-                <button onClick={() => { setEditingId(null); setForm({ year, month: 1, category: '', subcategory: '', item_name: '', amount_thb: 0, expense_type: 'OPEX' }); setOpenModal('expense') }}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-                  <Plus size={16} /> Add Budget Item
-                </button>
-              </div>
+              {canAdd && (
+                <div className="flex justify-end mb-4">
+                  <button onClick={() => { setEditingId(null); setForm({ year, month: 1, category: '', subcategory: '', item_name: '', amount_thb: 0, expense_type: 'OPEX' }); setOpenModal('expense') }}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+                    <Plus size={16} /> Add Budget Item
+                  </button>
+                </div>
+              )}
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
@@ -444,8 +455,8 @@ export default function BudgetClient({
                         <td className="px-4 py-2.5 text-right font-semibold">{format(e.amount_thb)}</td>
                         <td className="px-4 py-2.5">
                           <div className="flex gap-2">
-                            <button onClick={() => { setEditingId(e.id); setForm(e); setOpenModal('expense') }} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>
-                            <button onClick={() => deleteExpense(e.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>
+                            {canEdit   && <button onClick={() => { setEditingId(e.id); setForm(e); setOpenModal('expense') }} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>}
+                            {canDelete && <button onClick={() => deleteExpense(e.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>}
                           </div>
                         </td>
                       </tr>
@@ -459,12 +470,14 @@ export default function BudgetClient({
           {/* Rent Schedule */}
           {inputSection === 'rent' && (
             <>
-              <div className="flex justify-end mb-4">
-                <button onClick={() => { setEditingId(null); setForm({ year_number: rent.length + 1, rent_thb: 0 }); setOpenModal('rent') }}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-                  <Plus size={16} /> Add Year
-                </button>
-              </div>
+              {canAdd && (
+                <div className="flex justify-end mb-4">
+                  <button onClick={() => { setEditingId(null); setForm({ year_number: rent.length + 1, rent_thb: 0 }); setOpenModal('rent') }}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+                    <Plus size={16} /> Add Year
+                  </button>
+                </div>
+              )}
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
@@ -486,7 +499,7 @@ export default function BudgetClient({
                         <td className="px-4 py-2.5 text-right text-slate-500">{format(r.rent_thb * 0.0266)}</td>
                         <td className="px-4 py-2.5 text-right">{format(r.rent_thb / 12)}</td>
                         <td className="px-4 py-2.5">
-                          <button onClick={() => { setEditingId(r.id); setForm(r); setOpenModal('rent') }} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>
+                          {canEdit && <button onClick={() => { setEditingId(r.id); setForm(r); setOpenModal('rent') }} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>}
                         </td>
                       </tr>
                     ))}

@@ -9,11 +9,16 @@ import type { ShareholderWork } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 import StatCard from '@/components/StatCard'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<ShareholderWork> = { month: '', shareholder: '', hours: 0, hour_rate: 200 }
 
 export default function WorkClient({ initialWork }: { initialWork: ShareholderWork[] }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canAdd    = can('shareholder_work', 'add')
+  const canEdit   = can('shareholder_work', 'edit')
+  const canDelete = can('shareholder_work', 'delete')
   const [work, setWork] = useState<ShareholderWork[]>(initialWork)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ShareholderWork | null>(null)
@@ -66,11 +71,11 @@ export default function WorkClient({ initialWork }: { initialWork: ShareholderWo
       <PageHeader
         title="Shareholder Work"
         subtitle="Hours logged at 200 THB/hr"
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Log Hours
           </button>
-        }
+        ) : undefined}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -110,8 +115,8 @@ export default function WorkClient({ initialWork }: { initialWork: ShareholderWo
                       <td className="px-4 py-2.5 text-right font-semibold">{format((w.hours ?? 0) * (w.hour_rate ?? 200))}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => openEdit(w)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                          <button onClick={() => remove(w.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                          {canEdit   && <button onClick={() => openEdit(w)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
+                          {canDelete && <button onClick={() => remove(w.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                         </div>
                       </td>
                     </tr>

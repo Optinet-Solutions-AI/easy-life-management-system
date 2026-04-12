@@ -9,6 +9,7 @@ import type { Guest } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 import { useCurrency } from '@/context/CurrencyContext'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<Guest> = {
   room: 1, check_in: '', check_out: '', guest_name: '', guest_count: 1,
@@ -24,6 +25,10 @@ type SortDir = 'asc' | 'desc'
 
 export default function GuestsClient({ initialGuests }: { initialGuests: Guest[] }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canAdd    = can('guests', 'add')
+  const canEdit   = can('guests', 'edit')
+  const canDelete = can('guests', 'delete')
 
   // Deduplicate on client side by id
   const allGuests = useMemo(() => {
@@ -195,11 +200,11 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
       <PageHeader
         title="Guests"
         subtitle={`${filtered.length} of ${guests.length} bookings`}
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Guest
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Search bar */}
@@ -234,8 +239,8 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                     <a href={`mailto:${g.email}?subject=Invoice – Room ${g.room}&body=Dear ${g.guest_name},%0D%0A%0D%0APlease find your invoice at: ${typeof window !== 'undefined' ? window.location.origin : ''}/api/invoice/${g.id}%0D%0A%0D%0AThank you for staying with us.%0D%0ADream-T`} title="Email invoice" className="text-slate-400 hover:text-blue-600 p-1"><Mail size={15} /></a>
                   )}
                   <a href="https://extranet.immigration.go.th/fn24online/" target="_blank" rel="noreferrer" title="TM30 online filing" className="text-slate-400 hover:text-amber-600 p-1"><ExternalLink size={15} /></a>
-                  <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>
-                  <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>
+                  {canEdit   && <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>}
+                  {canDelete && <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>}
                 </div>
               </div>
               <div className="text-xs text-slate-500 mb-2">{formatDate(g.check_in)} → {formatDate(g.check_out)}</div>
@@ -325,8 +330,8 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                           <a href={`mailto:${g.email}?subject=Invoice – Room ${g.room}&body=Dear ${g.guest_name},%0D%0A%0D%0APlease find your invoice at: ${typeof window !== 'undefined' ? window.location.origin : ''}/api/invoice/${g.id}%0D%0A%0D%0AThank you for staying with us.%0D%0ADream-T`} title="Email invoice" className="text-slate-400 hover:text-blue-600"><Mail size={15} /></a>
                         )}
                         <a href="https://extranet.immigration.go.th/fn24online/" target="_blank" rel="noreferrer" title="TM30 online filing" className="text-slate-400 hover:text-amber-600"><ExternalLink size={15} /></a>
-                        <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                        <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                        {canEdit   && <button onClick={() => openEdit(g)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
+                        {canDelete && <button onClick={() => remove(g.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                       </div>
                     </td>
                   </tr>

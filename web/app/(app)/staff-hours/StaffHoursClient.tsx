@@ -8,6 +8,7 @@ import type { StaffHour } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<StaffHour> = {
   staff_name: '', role: '', department: '', date: '', hours: 0, hourly_rate_thb: undefined, notes: '',
@@ -17,6 +18,10 @@ const PAGE_SIZE = 50
 
 export default function StaffHoursClient({ initialHours }: { initialHours: StaffHour[] }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canAdd    = can('staff_hours', 'add')
+  const canEdit   = can('staff_hours', 'edit')
+  const canDelete = can('staff_hours', 'delete')
   const [hours, setHours] = useState<StaffHour[]>(initialHours)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<StaffHour | null>(null)
@@ -105,11 +110,11 @@ export default function StaffHoursClient({ initialHours }: { initialHours: Staff
       <PageHeader
         title="Staff Hours"
         subtitle={`${hours.length} entries · payroll tracking`}
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Log Hours
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Monthly summary cards */}
@@ -175,8 +180,8 @@ export default function StaffHoursClient({ initialHours }: { initialHours: Staff
                 <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{h.notes ?? '—'}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(h)} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>
-                    <button onClick={() => remove(h.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>
+                    {canEdit   && <button onClick={() => openEdit(h)} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>}
+                    {canDelete && <button onClick={() => remove(h.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>}
                   </div>
                 </td>
               </tr>
@@ -204,8 +209,8 @@ export default function StaffHoursClient({ initialHours }: { initialHours: Staff
             </div>
             {h.notes && <p className="text-xs text-slate-500 mt-2">{h.notes}</p>}
             <div className="flex gap-2 mt-3">
-              <button onClick={() => openEdit(h)} className="flex-1 flex items-center justify-center gap-1 text-xs text-slate-600 border border-slate-200 rounded-lg py-1.5 hover:border-blue-400 hover:text-blue-600 transition-colors"><Pencil size={12} /> Edit</button>
-              <button onClick={() => remove(h.id)} className="text-slate-400 hover:text-red-600 border border-slate-200 rounded-lg px-2.5 py-1.5 hover:border-red-300 transition-colors"><Trash2 size={12} /></button>
+              {canEdit   && <button onClick={() => openEdit(h)} className="flex-1 flex items-center justify-center gap-1 text-xs text-slate-600 border border-slate-200 rounded-lg py-1.5 hover:border-blue-400 hover:text-blue-600 transition-colors"><Pencil size={12} /> Edit</button>}
+              {canDelete && <button onClick={() => remove(h.id)} className="text-slate-400 hover:text-red-600 border border-slate-200 rounded-lg px-2.5 py-1.5 hover:border-red-300 transition-colors"><Trash2 size={12} /></button>}
             </div>
           </div>
         ))}

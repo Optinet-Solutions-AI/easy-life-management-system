@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Search, ChevronUp, ChevronDown, ChevronLeft, Chev
 import { supabase } from '@/lib/supabase'
 import { formatDate, COMPLAINT_CATEGORIES, COMPLAINT_SEVERITIES, COMPLAINT_STATUSES } from '@/types'
 import { useRooms } from '@/context/RoomsContext'
+import { usePermissions } from '@/context/PermissionsContext'
 import type { Complaint } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -42,6 +43,10 @@ const EMPTY: Partial<Complaint> = {
 }
 
 export default function ComplaintsClient({ initialComplaints }: { initialComplaints: Complaint[] }) {
+  const { can } = usePermissions()
+  const canAdd    = can('complaints', 'add')
+  const canEdit   = can('complaints', 'edit')
+  const canDelete = can('complaints', 'delete')
   const [complaints, setComplaints] = useState<Complaint[]>(initialComplaints)
   const activeRooms = useRooms().filter(r => r.active)
   const [open, setOpen] = useState(false)
@@ -130,11 +135,11 @@ export default function ComplaintsClient({ initialComplaints }: { initialComplai
       <PageHeader
         title="Complaints"
         subtitle={`${filtered.length} of ${complaints.length} records`}
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Log Complaint
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Stats row */}
@@ -230,8 +235,8 @@ export default function ComplaintsClient({ initialComplaints }: { initialComplai
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                      <button onClick={() => remove(c.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                      {canEdit   && <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
+                      {canDelete && <button onClick={() => remove(c.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                     </div>
                   </td>
                 </tr>

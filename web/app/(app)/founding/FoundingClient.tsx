@@ -9,6 +9,7 @@ import type { FoundingContribution } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 import StatCard from '@/components/StatCard'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<FoundingContribution> = { date: '', method: '', shareholder: '', amount_thb: null, amount_eur: null, notes: '' }
 const PAGE_SIZE = 10
@@ -17,6 +18,10 @@ type SortDir = 'asc' | 'desc'
 
 export default function FoundingClient({ initialContributions }: { initialContributions: FoundingContribution[] }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canAdd    = can('founding', 'add')
+  const canEdit   = can('founding', 'edit')
+  const canDelete = can('founding', 'delete')
   const [contributions, setContributions] = useState<FoundingContribution[]>(initialContributions)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<FoundingContribution | null>(null)
@@ -98,11 +103,11 @@ export default function FoundingClient({ initialContributions }: { initialContri
       <PageHeader
         title="Founding Shareholders"
         subtitle={`${filtered.length} of ${contributions.length} contributions`}
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Contribution
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Per shareholder summary */}
@@ -152,8 +157,8 @@ export default function FoundingClient({ initialContributions }: { initialContri
                   <td className="px-4 py-2.5 text-slate-500 text-xs max-w-xs truncate">{c.notes}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                      <button onClick={() => remove(c.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                      {canEdit   && <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
+                      {canDelete && <button onClick={() => remove(c.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                     </div>
                   </td>
                 </tr>

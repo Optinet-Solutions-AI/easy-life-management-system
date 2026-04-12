@@ -9,6 +9,7 @@ import { useCurrency } from '@/context/CurrencyContext'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 import StatCard from '@/components/StatCard'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const STATUS_STYLE: Record<string, { badge: string; icon: React.ReactNode }> = {
   Accepted:              { badge: 'bg-green-100 text-green-700',   icon: <CheckCircle2 size={13} className="text-green-600" /> },
@@ -25,6 +26,8 @@ interface ReviewForm {
 
 export default function LegalClient({ initialExpenses }: { initialExpenses: Expense[] }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canEdit = can('legal', 'edit')
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
   const [reviewing, setReviewing] = useState<Expense | null>(null)
   const [reviewForm, setReviewForm] = useState<ReviewForm>({ status: 'Accepted', notes: '', reviewed_at: new Date().toISOString().split('T')[0] })
@@ -261,9 +264,9 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
                               <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{e.legal_reviewed_at ? formatDate(e.legal_reviewed_at) : '—'}</td>
                               <td className="px-4 py-3 print:hidden">
                                 <div className="flex gap-1">
-                                  <button onClick={() => openReview(e, 'Accepted')} title="Accept" className="p-1 rounded hover:bg-green-50 text-slate-400 hover:text-green-600 transition-colors"><CheckCircle2 size={15} /></button>
-                                  <button onClick={() => openReview(e, 'Clarification Needed')} title="Request clarification" className="p-1 rounded hover:bg-yellow-50 text-slate-400 hover:text-yellow-600 transition-colors"><HelpCircle size={15} /></button>
-                                  <button onClick={() => openReview(e, 'Rejected')} title="Reject" className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><XCircle size={15} /></button>
+                                  {canEdit && <button onClick={() => openReview(e, 'Accepted')} title="Accept" className="p-1 rounded hover:bg-green-50 text-slate-400 hover:text-green-600 transition-colors"><CheckCircle2 size={15} /></button>}
+                                  {canEdit && <button onClick={() => openReview(e, 'Clarification Needed')} title="Request clarification" className="p-1 rounded hover:bg-yellow-50 text-slate-400 hover:text-yellow-600 transition-colors"><HelpCircle size={15} /></button>}
+                                  {canEdit && <button onClick={() => openReview(e, 'Rejected')} title="Reject" className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><XCircle size={15} /></button>}
                                   <button onClick={() => setExpanded(isExpanded ? null : e.id)} className="p-1 rounded text-slate-300 hover:text-slate-600 transition-colors">{isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</button>
                                 </div>
                               </td>
@@ -309,11 +312,13 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
                           {e.legal_reviewed_at && <p className="text-xs text-slate-400 mt-0.5">{formatDate(e.legal_reviewed_at)}</p>}
                         </div>
                       </div>
-                      <div className="flex gap-2 mt-3">
-                        <button onClick={() => openReview(e, 'Accepted')} className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50"><CheckCircle2 size={12} /> Accept</button>
-                        <button onClick={() => openReview(e, 'Clarification Needed')} className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-yellow-200 text-yellow-700 hover:bg-yellow-50"><HelpCircle size={12} /> Clarify</button>
-                        <button onClick={() => openReview(e, 'Rejected')} className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50"><XCircle size={12} /> Reject</button>
-                      </div>
+                      {canEdit && (
+                        <div className="flex gap-2 mt-3">
+                          <button onClick={() => openReview(e, 'Accepted')} className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50"><CheckCircle2 size={12} /> Accept</button>
+                          <button onClick={() => openReview(e, 'Clarification Needed')} className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-yellow-200 text-yellow-700 hover:bg-yellow-50"><HelpCircle size={12} /> Clarify</button>
+                          <button onClick={() => openReview(e, 'Rejected')} className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50"><XCircle size={12} /> Reject</button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

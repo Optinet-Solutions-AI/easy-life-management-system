@@ -9,6 +9,7 @@ import type { Revenue } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 import StatCard from '@/components/StatCard'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<Revenue> = { date: '', type: '', supplier: '', amount_thb: null, notes: '' }
 const PAGE_SIZE = 10
@@ -19,6 +20,10 @@ interface GuestPayment { check_in: string; check_out: string; amount_thb_stay: n
 
 export default function RevenueClient({ initialRevenue, guestPayments }: { initialRevenue: Revenue[]; guestPayments: GuestPayment[] }) {
   const { format } = useCurrency()
+  const { can } = usePermissions()
+  const canAdd    = can('revenue', 'add')
+  const canEdit   = can('revenue', 'edit')
+  const canDelete = can('revenue', 'delete')
   const [revenues, setRevenues] = useState<Revenue[]>(initialRevenue)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Revenue | null>(null)
@@ -113,9 +118,11 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
         title="Revenue"
         subtitle={`${filtered.length} of ${revenues.length} records`}
         action={
-          <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-            <Plus size={16} /> Add Revenue
-          </button>
+          {canAdd && (
+            <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+              <Plus size={16} /> Add Revenue
+            </button>
+          )}
         }
       />
 
@@ -159,8 +166,8 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{r.notes}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => openEdit(r)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                      <button onClick={() => remove(r.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                      {canEdit   && <button onClick={() => openEdit(r)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
+                      {canDelete && <button onClick={() => remove(r.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                     </div>
                   </td>
                 </tr>

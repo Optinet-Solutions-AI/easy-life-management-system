@@ -7,6 +7,7 @@ import { formatDate, TODO_STATUSES, DEPARTMENTS, SHAREHOLDERS } from '@/types'
 import type { Todo } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<Todo> = { project: 'DMS', department: '', topic: '', responsible_person: '', status_notes: '', target_date: '', status: 'Pending' }
 
@@ -18,6 +19,10 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) {
+  const { can } = usePermissions()
+  const canAdd    = can('tasks', 'add')
+  const canEdit   = can('tasks', 'edit')
+  const canDelete = can('tasks', 'delete')
   const [todos, setTodos] = useState<Todo[]>(initialTodos)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Todo | null>(null)
@@ -67,11 +72,11 @@ export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) 
       <PageHeader
         title="Tasks"
         subtitle="Project management board"
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Task
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Status filter tabs */}
@@ -106,8 +111,8 @@ export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) 
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(t)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
-                    <button onClick={() => remove(t.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                    {canEdit   && <button onClick={() => openEdit(t)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
+                    {canDelete && <button onClick={() => remove(t.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                   </div>
                   {t.responsible_person && <span className="text-xs text-slate-500">{t.responsible_person}</span>}
                   {t.target_date && (

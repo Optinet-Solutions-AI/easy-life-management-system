@@ -7,12 +7,17 @@ import { formatDate, SHAREHOLDERS } from '@/types'
 import type { ShareholderMeeting, MeetingAttachment } from '@/types'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
+import { usePermissions } from '@/context/PermissionsContext'
 
 const EMPTY: Partial<ShareholderMeeting> = {
   meeting_date: '', title: '', participants: [], agenda: '', decisions: '', action_items: '', attachments: [],
 }
 
 export default function ShareholderMeetingsClient({ initialMeetings }: { initialMeetings: ShareholderMeeting[] }) {
+  const { can } = usePermissions()
+  const canAdd    = can('shareholder_meetings', 'add')
+  const canEdit   = can('shareholder_meetings', 'edit')
+  const canDelete = can('shareholder_meetings', 'delete')
   const [meetings, setMeetings] = useState<ShareholderMeeting[]>(initialMeetings)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ShareholderMeeting | null>(null)
@@ -94,11 +99,11 @@ export default function ShareholderMeetingsClient({ initialMeetings }: { initial
       <PageHeader
         title="Shareholder Meetings"
         subtitle={`${meetings.length} meetings recorded`}
-        action={
+        action={canAdd ? (
           <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
             <Plus size={16} /> Add Meeting
           </button>
-        }
+        ) : undefined}
       />
 
       <div className="space-y-3">
@@ -129,8 +134,8 @@ export default function ShareholderMeetingsClient({ initialMeetings }: { initial
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button onClick={e => { e.stopPropagation(); openEdit(m) }} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>
-                  <button onClick={e => { e.stopPropagation(); remove(m.id) }} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>
+                  {canEdit   && <button onClick={e => { e.stopPropagation(); openEdit(m) }} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>}
+                  {canDelete && <button onClick={e => { e.stopPropagation(); remove(m.id) }} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>}
                   {isExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
                 </div>
               </div>
