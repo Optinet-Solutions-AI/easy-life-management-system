@@ -74,19 +74,36 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
 
   async function save() {
     setSaving(true)
-    if (editing) {
-      const { data } = await supabase.from('revenue').update(form).eq('id', editing.id).select().single()
-      if (data) setRevenues(prev => prev.map(r => r.id === editing.id ? data : r))
-    } else {
-      const { data } = await supabase.from('revenue').insert(form).select().single()
-      if (data) setRevenues(prev => [data, ...prev])
+    // Only send editable fields — never send id / created_at
+    const payload = {
+      date:       form.date       || null,
+      type:       form.type       || null,
+      supplier:   form.supplier   || null,
+      amount_thb: form.amount_thb ?? null,
+      notes:      form.notes      || null,
     }
-    setSaving(false); setOpen(false)
+    try {
+      if (editing) {
+        const { data, error } = await supabase.from('revenue').update(payload).eq('id', editing.id).select().single()
+        if (error) throw error
+        setRevenues(prev => prev.map(r => r.id === editing.id ? (data ?? { ...editing, ...payload }) : r))
+      } else {
+        const { data, error } = await supabase.from('revenue').insert(payload).select().single()
+        if (error) throw error
+        if (data) setRevenues(prev => [data, ...prev])
+      }
+      setOpen(false)
+    } catch (err: unknown) {
+      alert('Save failed: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function remove(id: string) {
     if (!confirm('Delete this revenue record?')) return
-    await supabase.from('revenue').delete().eq('id', id)
+    const { error } = await supabase.from('revenue').delete().eq('id', id)
+    if (error) { alert('Delete failed: ' + error.message); return }
     setRevenues(prev => prev.filter(r => r.id !== id))
   }
 

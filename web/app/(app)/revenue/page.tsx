@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase'
 import type { Revenue } from '@/types'
 import RevenueClient from './RevenueClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function RevenuePage() {
   const [revenueRes, guestsRes] = await Promise.all([
     supabase.from('revenue').select('*').order('date', { ascending: false }),
