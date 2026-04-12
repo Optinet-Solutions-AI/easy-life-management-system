@@ -18,7 +18,9 @@
       "Bash(ls c:/Users/Chris-Optinet/elms/*.py)",
       "Bash(ls c:/Users/Chris-Optinet/elms/*.xlsx)",
       "Bash(xargs grep:*)",
-      "Bash(grep -l \"usePermissions\" c:/Users/Chris-Optinet/elms/web/app/**/*Client.tsx)"
+      "Bash(grep -l \"usePermissions\" c:/Users/Chris-Optinet/elms/web/app/**/*Client.tsx)",
+      "Bash(grep -rn \"action={$\" \"c:/Users/Chris-Optinet/elms/web/app/\\(app\\)\" --include=\"*.tsx\")",
+      "Bash(grep -A2 \"action={$\" \"c:/Users/Chris-Optinet/elms/web/app/\\(app\\)/admin/users/UsersClient.tsx\" \"c:/Users/Chris-Optinet/elms/web/app/\\(app\\)/legal/LegalClient.tsx\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Chris-Optinet\\elms\\web\\app\\api",

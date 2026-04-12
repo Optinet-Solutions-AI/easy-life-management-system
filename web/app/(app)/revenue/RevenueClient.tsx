@@ -117,13 +117,11 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
       <PageHeader
         title="Revenue"
         subtitle={`${filtered.length} of ${revenues.length} records`}
-        action={
-          {canAdd && (
-            <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-              <Plus size={16} /> Add Revenue
-            </button>
-          )}
-        }
+        action={canAdd ? (
+          <button onClick={openNew} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+            <Plus size={16} /> Add Revenue
+          </button>
+        ) : undefined}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">

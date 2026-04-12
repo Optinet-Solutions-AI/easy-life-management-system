@@ -62,12 +62,14 @@ const nav: NavItem[] = [
 function NavLinks({ onNav, userRole }: { onNav?: () => void; userRole?: string }) {
   const pathname = usePathname()
   const { can } = usePermissions()
+  const isAdmin = userRole === 'Admin'
   return (
     <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
       {nav.map(({ href, label, icon: Icon, moduleKey, adminOnly }) => {
-        if (adminOnly && userRole !== 'Admin') return null
-        if (moduleKey && userRole && userRole !== 'Admin' && !can(moduleKey, 'view')) return null
+        if (adminOnly && !isAdmin) return null
+        if (moduleKey && userRole && !isAdmin && !can(moduleKey, 'view')) return null
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+        const displayLabel = href === '/settings' && !isAdmin ? 'Settings' : label
         return (
           <Link
             key={href}
@@ -80,7 +82,7 @@ function NavLinks({ onNav, userRole }: { onNav?: () => void; userRole?: string }
             }`}
           >
             <Icon size={18} />
-            <span className="flex-1">{label}</span>
+            <span className="flex-1">{displayLabel}</span>
             {active && <ChevronRight size={14} />}
           </Link>
         )
