@@ -1,10 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Pencil } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useRooms } from '@/context/RoomsContext'
+import { usePermissions } from '@/context/PermissionsContext'
 import { SHAREHOLDERS, MONTHS } from '@/types'
 import StatCard from '@/components/StatCard'
+import Modal from '@/components/Modal'
 
 const OPEX_ORDER = [
   'Staff Costs', 'Rooms Department', 'Utilities', 'Maintenance & Repairs',
@@ -12,7 +16,7 @@ const OPEX_ORDER = [
   'Sales & Marketing', 'Travel',
 ]
 
-type Tab = 'financial' | 'funding' | 'budget' | 'kpis' | 'costs' | 'forecast' | 'profiles'
+type Tab = 'financial' | 'funding' | 'budget' | 'kpis' | 'costs' | 'forecast' | 'profiles' | 'shareholding'
 
 interface ExpenseRow { category: string | null; amount: number | null; currency?: string; payment_date: string | null }
 interface RevenueRow { amount_thb: number | null; date: string }
@@ -57,19 +61,29 @@ function VarCell({ budget, actual, invertGood = false }: { budget: number; actua
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'financial', label: 'Financial Overview' },
-  { id: 'funding', label: 'Funding & Investment' },
-  { id: 'budget', label: 'Budget vs Actual' },
-  { id: 'kpis', label: 'Business KPIs' },
-  { id: 'costs', label: 'Cost Structure' },
-  { id: 'forecast', label: 'Forecast' },
-  { id: 'profiles', label: 'Shareholder Profiles' },
+  { id: 'financial',    label: 'Financial Overview' },
+  { id: 'funding',      label: 'Funding & Investment' },
+  { id: 'shareholding', label: 'Shareholding' },
+  { id: 'budget',       label: 'Budget vs Actual' },
+  { id: 'kpis',         label: 'Business KPIs' },
+  { id: 'costs',        label: 'Cost Structure' },
+  { id: 'forecast',     label: 'Forecast' },
+  { id: 'profiles',     label: 'Shareholder Profiles' },
 ]
 
-export default function ShareholderDashClient({ expenses, revenues, contributions, accountBalances, budgetRevenue, budgetExpenses, guests, shareholders, currentYear }: Props) {
+export default function ShareholderDashClient({ expenses, revenues, contributions, accountBalances, budgetRevenue, budgetExpenses, guests, shareholders: initialShareholders, currentYear }: Props) {
   const [tab, setTab] = useState<Tab>('financial')
   const { format } = useCurrency()
   const TOTAL_ROOMS = useRooms().filter(r => r.active).length || 10
+  const { role } = usePermissions()
+  const isAdmin = role === 'Admin'
+
+  // Mutable shareholders so admin edits reflect immediately
+  const [shareholders, setShareholders] = useState<ShareholderRow[]>(initialShareholders)
+
+  // Edit shareholding modal state
+  const [editPct, setEditPct] = useState<{ id: string; name: string; share_percentage: number } | null>(null)
+  const [editPctSaving, setEditPctSaving] = useState(false)
 
   const today = new Date()
   const currentMonth = today.getMonth()
@@ -95,6 +109,44 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
     const shData = shareholders.find(s => s.name === name)
     return { name, total, agreed: shData?.amount_to_found_thb ?? 0, pct: shData?.share_percentage ?? 25 }
   }), [contributions, shareholders])
+
+  // ── Shareholding ──
+  const totalAllocatedPct = useMemo(() =>
+    shareholders.reduce((s, sh) => s + (sh.share_percentage ?? 0), 0),
+  [shareholders])
+
+  const shareholdingData = useMemo(() => SHAREHOLDERS.map(name => {
+    const sh = shareholders.find(s => s.name === name)
+    const nominalPct = sh?.share_percentage ?? 0
+    const actualPaid = contributions.filter(c => c.shareholder === name).reduce((s, c) => s + (c.amount_thb ?? 0), 0)
+    // Nominal share = what they should have contributed based on their % of the total invested
+    const nominalAmount = (totalFounded * nominalPct) / 100
+    const balance = nominalAmount - actualPaid  // positive = owes more, negative = overpaid
+    const fundedPct = nominalAmount > 0 ? (actualPaid / nominalAmount) * 100 : 100
+    return { name, nominalPct, nominalAmount, actualPaid, balance, fundedPct, shId: sh?.id ?? null }
+  }), [shareholders, contributions, totalFounded])
+
+  // ── Handler: edit share percentage ──
+  async function handleSavePct(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editPct) return
+    setEditPctSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from('shareholders')
+        .update({ share_percentage: editPct.share_percentage })
+        .eq('id', editPct.id)
+        .select()
+        .single()
+      if (error) throw error
+      setShareholders(prev => prev.map(s => s.id === editPct.id ? { ...s, share_percentage: editPct.share_percentage } : s))
+      setEditPct(null)
+    } catch (err) {
+      alert('Failed: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setEditPctSaving(false)
+    }
+  }
 
   // ── Budget vs Actual (P&L) ──
   const yearRevenue = budgetRevenue.filter(r => r.year === currentYear)
@@ -568,6 +620,123 @@ export default function ShareholderDashClient({ expenses, revenues, contribution
             )
           })}
         </div>
+      )}
+
+      {/* ── Tab: Shareholding ── */}
+      {tab === 'shareholding' && (
+        <div className="space-y-6">
+          {/* Summary stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatCard label="Total Capital Invested" value={format(totalFounded)} color="blue" />
+            <StatCard
+              label="Total Allocated"
+              value={`${totalAllocatedPct.toFixed(1)}%`}
+              color={Math.abs(totalAllocatedPct - 100) < 0.01 ? 'green' : 'red'}
+              sub={Math.abs(totalAllocatedPct - 100) < 0.01 ? 'Fully allocated' : `${(100 - totalAllocatedPct).toFixed(1)}% unallocated`}
+            />
+            <StatCard
+              label="Fully Settled"
+              value={`${shareholdingData.filter(s => s.balance <= 0).length} / ${shareholdingData.length}`}
+              color="default"
+              sub="Shareholders who have paid in full"
+            />
+          </div>
+
+          {/* Comparison table */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600">Shareholder</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600">Nominal %</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600">Nominal Share</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600">Actual Paid</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600">Balance</th>
+                  {isAdmin && <th className="px-4 py-3" />}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {shareholdingData.map(s => (
+                  <tr key={s.name} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-medium text-slate-800">{s.name}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{s.nominalPct.toFixed(1)}%</td>
+                    <td className="px-4 py-3 text-right font-medium">{format(s.nominalAmount)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-blue-600">{format(s.actualPaid)}</td>
+                    <td className={`px-4 py-3 text-right font-semibold ${s.balance > 0.5 ? 'text-red-500' : s.balance < -0.5 ? 'text-green-600' : 'text-slate-400'}`}>
+                      {Math.abs(s.balance) < 0.5 ? '—' : s.balance > 0 ? `−${format(s.balance)}` : `+${format(Math.abs(s.balance))}`}
+                    </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-center">
+                        {s.shId && (
+                          <button
+                            onClick={() => setEditPct({ id: s.shId!, name: s.name, share_percentage: s.nominalPct })}
+                            className="text-slate-400 hover:text-blue-600 transition-colors"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                <tr>
+                  <td className="px-4 py-2.5 font-semibold text-slate-600">Total</td>
+                  <td className="px-4 py-2.5 text-right font-bold text-slate-700">{totalAllocatedPct.toFixed(1)}%</td>
+                  <td className="px-4 py-2.5 text-right font-bold">{format(totalFounded)}</td>
+                  <td className="px-4 py-2.5 text-right font-bold text-blue-600">{format(shareholdingData.reduce((s, d) => s + d.actualPaid, 0))}</td>
+                  <td className="px-4 py-2.5 text-right font-bold text-red-500">{format(shareholdingData.reduce((s, d) => s + Math.max(0, d.balance), 0))}</td>
+                  {isAdmin && <td />}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Visual funding bars */}
+          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+            <h3 className="text-sm font-semibold text-slate-700 mb-4">Funding Progress vs Nominal Share</h3>
+            <div className="space-y-5">
+              {shareholdingData.map(s => (
+                <div key={s.name}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium text-slate-800">{s.name}</span>
+                    <span className="text-xs text-slate-500">{format(s.actualPaid)} / {format(s.nominalAmount)}</span>
+                  </div>
+                  <Bar pct={s.fundedPct} color={s.fundedPct >= 100 ? 'bg-green-500' : s.fundedPct >= 50 ? 'bg-blue-500' : 'bg-amber-400'} />
+                  <p className="text-xs text-slate-400 mt-1">{s.fundedPct.toFixed(0)}% funded · {s.nominalPct.toFixed(1)}% nominal share</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit share percentage modal */}
+      {editPct && (
+        <Modal title={`Edit Shareholding — ${editPct.name.split(' ')[0]}`} onClose={() => setEditPct(null)}>
+          <form onSubmit={handleSavePct} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Share Percentage (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                value={editPct.share_percentage}
+                onChange={e => setEditPct(p => p ? { ...p, share_percentage: parseFloat(e.target.value) || 0 } : p)}
+              />
+              <p className="text-xs text-slate-400 mt-1">Total currently allocated: {totalAllocatedPct.toFixed(1)}%</p>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setEditPct(null)} className="px-4 py-2 text-sm text-slate-600">Cancel</button>
+              <button type="submit" disabled={editPctSaving} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+                {editPctSaving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   )
