@@ -44,6 +44,7 @@ export interface Expense {
   legal_status: string | null
   legal_notes: string | null
   legal_reviewed_at: string | null
+  file_url: string | null
   created_at: string
 }
 

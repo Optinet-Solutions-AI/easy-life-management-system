@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef } from 'react'
-import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2, FileText, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2, FileText, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, SHAREHOLDERS } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
@@ -40,6 +40,10 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   const [previewName, setPreviewName] = useState<string | null>(null)
   const [previewIsPdf, setPreviewIsPdf] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Attachment state (separate from OCR — stores file, no extraction)
+  const [attachUploading, setAttachUploading] = useState(false)
+  const attachRef = useRef<HTMLInputElement>(null)
 
   const PAGE_SIZE = 10
 
@@ -170,6 +174,24 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   function clearOcr() {
     setPreviewUrl(null); setPreviewName(null); setPreviewIsPdf(false)
     setOcrFields(new Set()); setOcrError(null)
+  }
+
+  async function handleAttachUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setAttachUploading(true)
+    try {
+      const path = `expenses/${Date.now()}-${Math.random().toString(36).slice(2)}/${file.name}`
+      const { data, error } = await supabase.storage.from('dms-files').upload(path, file, { upsert: false })
+      if (error) throw error
+      const { data: { publicUrl } } = supabase.storage.from('dms-files').getPublicUrl(data.path)
+      setForm(f => ({ ...f, file_url: publicUrl }))
+    } catch (err) {
+      alert('Upload failed: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setAttachUploading(false)
+    }
   }
 
   const METHOD_TO_ACCOUNT: Record<string, string> = {
@@ -321,6 +343,11 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-2 justify-end">
+                      {e.file_url && (
+                        <a href={e.file_url} target="_blank" rel="noreferrer" title="View attached document" className="text-slate-400 hover:text-blue-600">
+                          <Paperclip size={15} />
+                        </a>
+                      )}
                       <button onClick={() => openEdit(e)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>
                       <button onClick={() => remove(e.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
                     </div>
@@ -483,9 +510,48 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
             </div>
           </div>
 
+          {/* ── Attach Document (no OCR — just stores the file) ── */}
+          <div className="mt-5 border-t border-slate-100 pt-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Attached Document</p>
+            {form.file_url ? (
+              <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                <FileText size={20} className="text-red-500 shrink-0" />
+                <a
+                  href={form.file_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 text-sm font-medium text-blue-600 hover:underline truncate"
+                >
+                  View attached document
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, file_url: null }))}
+                  title="Remove attachment"
+                  className="shrink-0 text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => attachRef.current?.click()}
+                disabled={attachUploading}
+                className="flex w-full items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-3 text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
+              >
+                {attachUploading
+                  ? <><Loader2 size={15} className="animate-spin" /> Uploading…</>
+                  : <><Paperclip size={15} /> Attach invoice / receipt (PDF or image)</>
+                }
+              </button>
+            )}
+            <input ref={attachRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleAttachUpload} />
+          </div>
+
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-slate-600">Cancel</button>
-            <button onClick={save} disabled={saving || ocrLoading} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+            <button onClick={save} disabled={saving || ocrLoading || attachUploading} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
