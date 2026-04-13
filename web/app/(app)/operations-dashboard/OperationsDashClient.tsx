@@ -21,7 +21,7 @@ interface FireAlertRow {
   location: string
   expiry_date: string
   serial_number: string | null
-  rooms: { number: number; name: string } | null
+  rooms: { number: number; name: string }[] | null
 }
 
 interface Props {
@@ -238,7 +238,7 @@ export default function OperationsDashClient({ guests, todos, revenues, accountB
                     <div key={fe.id} className="flex items-center justify-between px-4 py-2.5">
                       <div>
                         <p className="text-sm font-medium">
-                          {fe.rooms ? `Room ${fe.rooms.number} — ${fe.rooms.name}` : 'Unknown room'}
+                          {fe.rooms?.[0] ? `Room ${fe.rooms[0].number} — ${fe.rooms[0].name}` : 'Unknown room'}
                         </p>
                         <p className="text-xs text-slate-400">{fe.location}{fe.serial_number ? ` · S/N ${fe.serial_number}` : ''}</p>
                       </div>
