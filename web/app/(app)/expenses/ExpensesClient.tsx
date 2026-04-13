@@ -187,11 +187,12 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
     e.target.value = ''
     setAttachUploading(true)
     try {
-      const path = `expenses/${Date.now()}-${Math.random().toString(36).slice(2)}/${file.name}`
-      const { data, error } = await supabase.storage.from('dms-files').upload(path, file, { upsert: false })
-      if (error) throw error
-      const { data: { publicUrl } } = supabase.storage.from('dms-files').getPublicUrl(data.path)
-      setForm(f => ({ ...f, file_url: publicUrl }))
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const json = await res.json() as { ok: boolean; url?: string; error?: string }
+      if (!json.ok) throw new Error(json.error ?? 'Upload failed')
+      setForm(f => ({ ...f, file_url: json.url }))
     } catch (err) {
       alert('Upload failed: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
@@ -389,9 +390,8 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
       {open && (
         <Modal title={editing ? 'Edit Expense' : 'Add Expense'} onClose={() => setOpen(false)}>
 
-          {/* ── OCR Invoice Upload (only when adding new) ── */}
-          {!editing && (
-            <div className="mb-5">
+          {/* ── OCR Invoice Upload ── */}
+          <div className="mb-5">
               {!previewUrl ? (
                 <button
                   type="button"
@@ -433,7 +433,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
                   )}
                 </div>
               )}
-              <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleInvoiceUpload} />
+              <input ref={fileRef} type="file" accept="image/*,application/pdf,.pdf,.heic,.heif" className="hidden" onChange={handleInvoiceUpload} />
 
               {ocrError && (
                 <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
@@ -445,8 +445,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
                   ✦ {ocrFields.size} field{ocrFields.size > 1 ? 's' : ''} auto-filled — highlighted in purple. Review before saving.
                 </p>
               )}
-            </div>
-          )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -551,7 +550,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
                 }
               </button>
             )}
-            <input ref={attachRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleAttachUpload} />
+            <input ref={attachRef} type="file" accept="image/*,application/pdf,.pdf,.heic,.heif" className="hidden" onChange={handleAttachUpload} />
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
