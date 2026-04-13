@@ -92,6 +92,32 @@ export default function BudgetClient({
   const budTotalCapex = budMonthlyCapex.reduce((s, v) => s + v, 0)
   const budTotalResult = budTotalRev - budTotalOpex - budTotalCapex
 
+  // ── Expense matrix (category × month grid) ─────────────────────────────────
+  const expenseMatrix = useMemo(() => {
+    function buildGroups(type: string) {
+      const filtered = yearExpenses.filter(e => e.expense_type === type)
+      const categories = [...new Set(filtered.map(e => e.category))].sort()
+      return categories.map(category => {
+        const catItems = filtered.filter(e => e.category === category)
+        const itemNames = [...new Set(catItems.map(e => e.item_name))].sort()
+        const items = itemNames.map(item_name => {
+          const entries = catItems.filter(e => e.item_name === item_name)
+          const monthEntries: (BudgetExpense | undefined)[] = Array.from({ length: 12 }, (_, mi) =>
+            entries.find(e => e.month === mi + 1)
+          )
+          const rowTotal = entries.reduce((s, e) => s + e.amount_thb, 0)
+          return { item_name, monthEntries, rowTotal }
+        })
+        const catMonthTotals = Array.from({ length: 12 }, (_, mi) =>
+          items.reduce((s, i) => s + (i.monthEntries[mi]?.amount_thb ?? 0), 0)
+        )
+        const catTotal = items.reduce((s, i) => s + i.rowTotal, 0)
+        return { category, items, catMonthTotals, catTotal }
+      })
+    }
+    return { opex: buildGroups('OPEX'), capex: buildGroups('CAPEX') }
+  }, [yearExpenses])
+
   // ── Actual data for selected year ──────────────────────────────────────────
   const actMonthlyRevenue = useMemo(() => MONTHS.map((_, mi) =>
     propActualRev
@@ -417,7 +443,7 @@ export default function BudgetClient({
             </>
           )}
 
-          {/* Expense Items */}
+          {/* Expense Matrix */}
           {inputSection === 'expenses' && (
             <>
               {canAdd && (
@@ -428,42 +454,141 @@ export default function BudgetClient({
                   </button>
                 </div>
               )}
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                    <tr>
-                      <th className="text-left px-4 py-3 font-medium">Type</th>
-                      <th className="text-left px-4 py-3 font-medium">Category</th>
-                      <th className="text-left px-4 py-3 font-medium">Item</th>
-                      <th className="text-left px-4 py-3 font-medium">Month</th>
-                      <th className="text-right px-4 py-3 font-medium">Amount</th>
-                      <th className="px-4 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {yearExpenses.length === 0 && (
-                      <tr><td colSpan={6} className="text-center py-12 text-slate-400">No expense items for {year}.</td></tr>
-                    )}
-                    {yearExpenses.map(e => (
-                      <tr key={e.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-2.5">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${e.expense_type === 'OPEX' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{e.expense_type}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-600">{e.category}</td>
-                        <td className="px-4 py-2.5 font-medium">{e.item_name}</td>
-                        <td className="px-4 py-2.5 text-slate-500">{MONTHS[e.month - 1]}</td>
-                        <td className="px-4 py-2.5 text-right font-semibold">{format(e.amount_thb)}</td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex gap-2">
-                            {canEdit   && <button onClick={() => { setEditingId(e.id); setForm(e); setOpenModal('expense') }} className="text-slate-400 hover:text-blue-600"><Pencil size={14} /></button>}
-                            {canDelete && <button onClick={() => deleteExpense(e.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>}
-                          </div>
-                        </td>
+
+              {yearExpenses.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-16">No expense items for {year}. Click &ldquo;Add Budget Item&rdquo; to start.</p>
+              ) : (
+                <div className="bg-white rounded-xl border border-slate-200 overflow-auto">
+                  <table className="w-full text-xs min-w-[1200px]">
+                    <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-semibold text-slate-600 whitespace-nowrap w-48">Category / Item</th>
+                        {MONTHS.map(m => <th key={m} className="text-right px-2 py-3 font-semibold text-slate-500 w-16">{m}</th>)}
+                        <th className="text-right px-4 py-3 font-semibold text-slate-600 whitespace-nowrap">Total</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+
+                      {/* ── OPEX ── */}
+                      {expenseMatrix.opex.length > 0 && (
+                        <>
+                          <tr className="bg-slate-700">
+                            <td colSpan={14} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white">Operating Expenses (OPEX)</td>
+                          </tr>
+                          {expenseMatrix.opex.map(({ category, items, catMonthTotals, catTotal }) => (
+                            <>
+                              {/* Category header */}
+                              <tr key={`cat-${category}`} className="bg-blue-50 border-t border-blue-100">
+                                <td colSpan={14} className="px-4 py-1.5 text-xs font-bold text-blue-800 uppercase tracking-wide">{category}</td>
+                              </tr>
+                              {/* Item rows */}
+                              {items.map(({ item_name, monthEntries, rowTotal }) => (
+                                <tr key={`${category}-${item_name}`} className="hover:bg-slate-50 border-t border-slate-100">
+                                  <td className="px-4 py-2 text-slate-700 pl-7 whitespace-nowrap">{item_name}</td>
+                                  {monthEntries.map((entry, mi) => (
+                                    <td key={mi} className="px-1 py-2 text-right">
+                                      {entry ? (
+                                        (canEdit || canDelete) ? (
+                                          <button onClick={() => { setEditingId(entry.id); setForm(entry); setOpenModal('expense') }}
+                                            className="text-slate-700 hover:text-blue-600 hover:underline w-full text-right font-medium">
+                                            {fmt(entry.amount_thb)}
+                                          </button>
+                                        ) : <span className="text-slate-700 font-medium">{fmt(entry.amount_thb)}</span>
+                                      ) : canAdd ? (
+                                        <button onClick={() => { setEditingId(null); setForm({ year, month: mi + 1, category, subcategory: '', item_name, amount_thb: 0, expense_type: 'OPEX' }); setOpenModal('expense') }}
+                                          className="text-slate-200 hover:text-blue-400 w-full text-right leading-none" title={`Add ${MONTHS[mi]}`}>+</button>
+                                      ) : <span className="text-slate-200">—</span>}
+                                    </td>
+                                  ))}
+                                  <td className="px-4 py-2 text-right font-bold text-slate-700 whitespace-nowrap">{rowTotal > 0 ? fmt(rowTotal) : '—'}</td>
+                                </tr>
+                              ))}
+                              {/* Category subtotal */}
+                              <tr key={`sub-${category}`} className="bg-blue-50/60 border-t border-blue-100">
+                                <td className="px-4 py-1.5 text-xs font-semibold text-blue-700 pl-7">Subtotal — {category}</td>
+                                {catMonthTotals.map((v, mi) => (
+                                  <td key={mi} className="px-1 py-1.5 text-right font-semibold text-blue-700">{v > 0 ? fmt(v) : '—'}</td>
+                                ))}
+                                <td className="px-4 py-1.5 text-right font-bold text-blue-800">{catTotal > 0 ? fmt(catTotal) : '—'}</td>
+                              </tr>
+                            </>
+                          ))}
+                          {/* OPEX total */}
+                          <tr className="bg-slate-100 border-t-2 border-slate-400">
+                            <td className="px-4 py-2.5 font-bold text-slate-800 uppercase text-xs tracking-wide">Total OPEX</td>
+                            {budMonthlyOpex.map((v, mi) => (
+                              <td key={mi} className="px-1 py-2.5 text-right font-bold text-slate-700">{v > 0 ? fmt(v) : '—'}</td>
+                            ))}
+                            <td className="px-4 py-2.5 text-right font-bold text-slate-800">{budTotalOpex > 0 ? fmt(budTotalOpex) : '—'}</td>
+                          </tr>
+                        </>
+                      )}
+
+                      {/* ── CAPEX ── */}
+                      {expenseMatrix.capex.length > 0 && (
+                        <>
+                          <tr className="bg-orange-700">
+                            <td colSpan={14} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white">Capital Expenses (CAPEX)</td>
+                          </tr>
+                          {expenseMatrix.capex.map(({ category, items, catMonthTotals, catTotal }) => (
+                            <>
+                              <tr key={`cat-capex-${category}`} className="bg-orange-50 border-t border-orange-100">
+                                <td colSpan={14} className="px-4 py-1.5 text-xs font-bold text-orange-800 uppercase tracking-wide">{category}</td>
+                              </tr>
+                              {items.map(({ item_name, monthEntries, rowTotal }) => (
+                                <tr key={`capex-${category}-${item_name}`} className="hover:bg-slate-50 border-t border-slate-100">
+                                  <td className="px-4 py-2 text-slate-700 pl-7 whitespace-nowrap">{item_name}</td>
+                                  {monthEntries.map((entry, mi) => (
+                                    <td key={mi} className="px-1 py-2 text-right">
+                                      {entry ? (
+                                        (canEdit || canDelete) ? (
+                                          <button onClick={() => { setEditingId(entry.id); setForm(entry); setOpenModal('expense') }}
+                                            className="text-slate-700 hover:text-blue-600 hover:underline w-full text-right font-medium">
+                                            {fmt(entry.amount_thb)}
+                                          </button>
+                                        ) : <span className="text-slate-700 font-medium">{fmt(entry.amount_thb)}</span>
+                                      ) : canAdd ? (
+                                        <button onClick={() => { setEditingId(null); setForm({ year, month: mi + 1, category, subcategory: '', item_name, amount_thb: 0, expense_type: 'CAPEX' }); setOpenModal('expense') }}
+                                          className="text-slate-200 hover:text-orange-400 w-full text-right leading-none" title={`Add ${MONTHS[mi]}`}>+</button>
+                                      ) : <span className="text-slate-200">—</span>}
+                                    </td>
+                                  ))}
+                                  <td className="px-4 py-2 text-right font-bold text-slate-700 whitespace-nowrap">{rowTotal > 0 ? fmt(rowTotal) : '—'}</td>
+                                </tr>
+                              ))}
+                              <tr key={`sub-capex-${category}`} className="bg-orange-50/60 border-t border-orange-100">
+                                <td className="px-4 py-1.5 text-xs font-semibold text-orange-700 pl-7">Subtotal — {category}</td>
+                                {catMonthTotals.map((v, mi) => (
+                                  <td key={mi} className="px-1 py-1.5 text-right font-semibold text-orange-700">{v > 0 ? fmt(v) : '—'}</td>
+                                ))}
+                                <td className="px-4 py-1.5 text-right font-bold text-orange-800">{catTotal > 0 ? fmt(catTotal) : '—'}</td>
+                              </tr>
+                            </>
+                          ))}
+                          <tr className="bg-orange-50 border-t-2 border-orange-400">
+                            <td className="px-4 py-2.5 font-bold text-orange-800 uppercase text-xs tracking-wide">Total CAPEX</td>
+                            {budMonthlyCapex.map((v, mi) => (
+                              <td key={mi} className="px-1 py-2.5 text-right font-bold text-orange-700">{v > 0 ? fmt(v) : '—'}</td>
+                            ))}
+                            <td className="px-4 py-2.5 text-right font-bold text-orange-800">{budTotalCapex > 0 ? fmt(budTotalCapex) : '—'}</td>
+                          </tr>
+                        </>
+                      )}
+
+                      {/* Grand total */}
+                      <tr className="bg-slate-800 border-t-2 border-slate-600">
+                        <td className="px-4 py-3 font-bold text-white uppercase text-xs tracking-wide">Total Expenses</td>
+                        {MONTHS.map((_, mi) => {
+                          const v = budMonthlyOpex[mi] + budMonthlyCapex[mi]
+                          return <td key={mi} className="px-1 py-3 text-right font-bold text-white">{v > 0 ? fmt(v) : '—'}</td>
+                        })}
+                        <td className="px-4 py-3 text-right font-bold text-white">{(budTotalOpex + budTotalCapex) > 0 ? fmt(budTotalOpex + budTotalCapex) : '—'}</td>
+                      </tr>
+
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </>
           )}
 
@@ -765,9 +890,16 @@ export default function BudgetClient({
             <div><label className="label">Amount (THB)</label><input type="number" className="input" value={(form.amount_thb as number) ?? 0} onChange={e => setForm(f => ({ ...f, amount_thb: +e.target.value }))} /></div>
             <div className="sm:col-span-2"><label className="label">Item Name</label><input className="input" value={(form.item_name as string) ?? ''} onChange={e => setForm(f => ({ ...f, item_name: e.target.value }))} /></div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <button onClick={() => setOpenModal(null)} className="px-4 py-2 text-sm text-slate-600">Cancel</button>
-            <button onClick={saveExpense} disabled={saving} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
+          <div className="flex items-center justify-between mt-6">
+            <div>
+              {editingId && canDelete && (
+                <button onClick={() => { deleteExpense(editingId); setOpenModal(null) }} className="px-4 py-2 text-sm text-red-500 hover:text-red-700">Delete</button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setOpenModal(null)} className="px-4 py-2 text-sm text-slate-600">Cancel</button>
+              <button onClick={saveExpense} disabled={saving} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
+            </div>
           </div>
         </Modal>
       )}
