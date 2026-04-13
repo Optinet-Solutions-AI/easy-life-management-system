@@ -127,7 +127,13 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
 
   async function remove(id: string) {
     if (!confirm('Delete this guest record?')) return
-    await supabase.from('guests').delete().eq('id', id)
+    const guest = guests.find(g => g.id === id)
+    const { error } = await supabase.from('guests').delete().eq('id', id)
+    if (error) { alert('Delete failed: ' + error.message); return }
+    // Reverse the payment that was added to the account balance when this guest was saved
+    if (guest?.paid && guest.payment) {
+      await adjustBalance(guest.paid, -(guest.payment))
+    }
     setGuests(prev => prev.filter(g => g.id !== id))
   }
 
