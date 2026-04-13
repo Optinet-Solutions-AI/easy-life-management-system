@@ -26,6 +26,7 @@ import {
   Scale,
   Settings,
   MessageSquareWarning,
+  BedDouble,
 } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import { usePermissions } from '@/context/PermissionsContext'
@@ -45,6 +46,7 @@ const nav: NavItem[] = [
   { href: '/operations-dashboard',  label: 'GM Dashboard',     icon: Gauge,           moduleKey: 'gm_dashboard' },
   { href: '/guests',                label: 'Guests',           icon: Users,           moduleKey: 'guests' },
   { href: '/occupancy',             label: 'Occupancy',        icon: CalendarDays,    moduleKey: 'occupancy' },
+  { href: '/rooms',                 label: 'Rooms',            icon: BedDouble,       moduleKey: 'rooms' },
   { href: '/expenses',              label: 'Expenses',         icon: Receipt,         moduleKey: 'expenses' },
   { href: '/revenue',               label: 'Revenue',          icon: TrendingUp,      moduleKey: 'revenue' },
   { href: '/founding',              label: 'Founding',         icon: Landmark,        moduleKey: 'founding' },

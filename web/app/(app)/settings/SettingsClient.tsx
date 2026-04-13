@@ -48,6 +48,7 @@ const PERM_MODULES = [
   { key: 'gm_dashboard',          label: 'GM Dashboard' },
   { key: 'guests',                label: 'Guests' },
   { key: 'occupancy',             label: 'Occupancy' },
+  { key: 'rooms',                 label: 'Rooms' },
   { key: 'expenses',              label: 'Expenses' },
   { key: 'revenue',               label: 'Revenue' },
   { key: 'founding',              label: 'Founding' },

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Flame } from 'lucide-react'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useRooms } from '@/context/RoomsContext'
 import { DEPARTMENTS } from '@/types'
@@ -16,6 +16,14 @@ interface RevenueRow { amount_thb: number | null; date: string; type: string | n
 interface AccountRow { id: string; account_type: string; amount: number; notes: string | null; updated_at: string }
 interface ExpenseRow { amount: number | null; payment_date: string | null; category: string | null; supplier: string | null; document_number?: string | null }
 
+interface FireAlertRow {
+  id: string
+  location: string
+  expiry_date: string
+  serial_number: string | null
+  rooms: { number: number; name: string } | null
+}
+
 interface Props {
   guests: GuestRow[]
   todos: TodoRow[]
@@ -23,6 +31,7 @@ interface Props {
   accountBalances: AccountRow[]
   noInvoiceTotal: number
   expenses: ExpenseRow[]
+  fireAlerts: FireAlertRow[]
 }
 
 const TABS: { id: Tab; label: string }[] = [
@@ -49,7 +58,7 @@ const ACCOUNT_STYLE: Record<string, { emoji: string; bg: string }> = {
   'GM Bank': { emoji: '🏧', bg: 'bg-teal-50 border-teal-200' },
 }
 
-export default function OperationsDashClient({ guests, todos, revenues, accountBalances, noInvoiceTotal, expenses }: Props) {
+export default function OperationsDashClient({ guests, todos, revenues, accountBalances, noInvoiceTotal, expenses, fireAlerts }: Props) {
   const [tab, setTab] = useState<Tab>('today')
   const { format } = useCurrency()
   const TOTAL_ROOMS = useRooms().filter(r => r.active).length || 10
@@ -142,6 +151,9 @@ export default function OperationsDashClient({ guests, todos, revenues, accountB
             {t.id === 'tasks' && overdue.length > 0 && (
               <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">{overdue.length}</span>
             )}
+            {t.id === 'today' && fireAlerts.length > 0 && (
+              <span className="ml-1.5 bg-amber-500 text-white text-xs rounded-full px-1.5 py-0.5">🔥</span>
+            )}
           </button>
         ))}
       </div>
@@ -206,6 +218,42 @@ export default function OperationsDashClient({ guests, todos, revenues, accountB
                 className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-orange-600 hover:text-orange-800">
                 <ExternalLink size={12} /> Register on Thai Immigration portal
               </a>
+            </div>
+          )}
+
+          {/* Fire extinguisher expiry alerts */}
+          {fireAlerts.length > 0 && (
+            <div className="bg-white rounded-xl border border-amber-200 overflow-hidden">
+              <div className="px-4 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+                <Flame size={15} className="text-amber-600" />
+                <h3 className="text-sm font-semibold text-amber-700">
+                  Fire Extinguisher Alerts ({fireAlerts.length})
+                </h3>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {fireAlerts.map(fe => {
+                  const days = Math.ceil((new Date(fe.expiry_date).getTime() - Date.now()) / 86400000)
+                  const isExpired = days < 0
+                  return (
+                    <div key={fe.id} className="flex items-center justify-between px-4 py-2.5">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {fe.rooms ? `Room ${fe.rooms.number} — ${fe.rooms.name}` : 'Unknown room'}
+                        </p>
+                        <p className="text-xs text-slate-400">{fe.location}{fe.serial_number ? ` · S/N ${fe.serial_number}` : ''}</p>
+                      </div>
+                      <div className="text-right shrink-0 ml-4">
+                        <p className="text-xs font-semibold text-slate-600">
+                          {new Date(fe.expiry_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                        <span className={`text-xs font-semibold ${isExpired ? 'text-red-600' : 'text-amber-600'}`}>
+                          {isExpired ? `Expired ${Math.abs(days)}d ago` : `${days}d left`}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
