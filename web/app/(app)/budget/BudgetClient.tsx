@@ -79,8 +79,14 @@ export default function BudgetClient({
   const yearExpenses = expenses.filter(e => e.year === year)
   const yearSetup = roomSetup.filter(s => s.year === year)
 
+  // Only count actual room entries (ROOMS_LIST) for budget totals.
+  // The budget_revenue table may contain imported aggregate rows (e.g. "Revenue",
+  // "Renovated - Double") that are pre-computed subtotals from the source spreadsheet.
+  // Including those would double-count the individual room values.
+  const yearRevenueRooms = yearRevenue.filter(r => ROOMS_LIST.includes(r.room_name))
+
   const budMonthlyRevenue = MONTHS.map((_, mi) =>
-    yearRevenue.filter(r => r.month === mi + 1).reduce((s, r) => s + r.amount_thb, 0))
+    yearRevenueRooms.filter(r => r.month === mi + 1).reduce((s, r) => s + r.amount_thb, 0))
   const budMonthlyOpex = MONTHS.map((_, mi) =>
     yearExpenses.filter(e => e.month === mi + 1 && e.expense_type === 'OPEX').reduce((s, e) => s + e.amount_thb, 0))
   const budMonthlyCapex = MONTHS.map((_, mi) =>
@@ -91,16 +97,6 @@ export default function BudgetClient({
   const budTotalOpex = budMonthlyOpex.reduce((s, v) => s + v, 0)
   const budTotalCapex = budMonthlyCapex.reduce((s, v) => s + v, 0)
   const budTotalResult = budTotalRev - budTotalOpex - budTotalCapex
-
-  // Dynamic room list: ROOMS_LIST order first, then any extra rooms that exist in the data
-  // This prevents a mismatch where an entry with an unexpected room name appears in totals
-  // but is invisible in the rows.
-  const revMatrixRooms = useMemo(() => {
-    const fromData = [...new Set(yearRevenue.map(r => r.room_name))]
-    const merged = [...ROOMS_LIST]
-    fromData.forEach(r => { if (!merged.includes(r)) merged.push(r) })
-    return merged
-  }, [yearRevenue])
 
   // ── Expense matrix (category × month grid) ─────────────────────────────────
   const expenseMatrix = useMemo(() => {
@@ -175,10 +171,10 @@ export default function BudgetClient({
   }, [propActualExp, year])
 
   const plData = useMemo(() => {
-    const rooms = [...new Set(yearRevenue.map(r => r.room_name))].sort()
+    const rooms = [...new Set(yearRevenueRooms.map(r => r.room_name))].sort()
     const revenueRows = rooms.map(room => ({
       name: room,
-      budget: yearRevenue.filter(r => r.room_name === room).reduce((s, r) => s + r.amount_thb, 0),
+      budget: yearRevenueRooms.filter(r => r.room_name === room).reduce((s, r) => s + r.amount_thb, 0),
     }))
 
     const presentOpex = OPEX_ORDER.filter(cat => yearExpenses.some(e => e.expense_type === 'OPEX' && e.category === cat))
@@ -419,18 +415,23 @@ export default function BudgetClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {revMatrixRooms.map(room => {
-                      const rowTotal = yearRevenue.filter(r => r.room_name === room).reduce((s, r) => s + r.amount_thb, 0)
+                    {ROOMS_LIST.map(room => {
+                      const roomEntries = yearRevenueRooms.filter(r => r.room_name === room)
+                      const rowTotal = roomEntries.reduce((s, r) => s + r.amount_thb, 0)
                       return (
                         <tr key={room} className="hover:bg-slate-50">
                           <td className="px-4 py-2.5 font-medium text-sm whitespace-nowrap">{room}</td>
                           {MONTHS.map((_, mi) => {
-                            const entry = yearRevenue.find(r => r.room_name === room && r.month === mi + 1)
+                            const monthEntries = roomEntries.filter(r => r.month === mi + 1)
+                            const cellAmount = monthEntries.reduce((s, r) => s + r.amount_thb, 0)
+                            const firstEntry = monthEntries[0]
                             return (
                               <td key={mi} className="px-2 py-2.5 text-right text-xs">
-                                {entry ? (
-                                  <button onClick={() => { setEditingId(entry.id); setForm(entry); setOpenModal('revenue') }}
-                                    className="text-green-600 hover:underline">{format(entry.amount_thb).replace('฿', '')}</button>
+                                {cellAmount > 0 ? (
+                                  firstEntry ? (
+                                    <button onClick={() => { setEditingId(firstEntry.id); setForm(firstEntry); setOpenModal('revenue') }}
+                                      className="text-green-600 hover:underline">{format(cellAmount).replace('฿', '')}</button>
+                                  ) : <span className="text-green-600">{format(cellAmount).replace('฿', '')}</span>
                                 ) : '—'}
                               </td>
                             )
