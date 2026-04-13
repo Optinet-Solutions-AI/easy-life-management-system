@@ -92,6 +92,16 @@ export default function BudgetClient({
   const budTotalCapex = budMonthlyCapex.reduce((s, v) => s + v, 0)
   const budTotalResult = budTotalRev - budTotalOpex - budTotalCapex
 
+  // Dynamic room list: ROOMS_LIST order first, then any extra rooms that exist in the data
+  // This prevents a mismatch where an entry with an unexpected room name appears in totals
+  // but is invisible in the rows.
+  const revMatrixRooms = useMemo(() => {
+    const fromData = [...new Set(yearRevenue.map(r => r.room_name))]
+    const merged = [...ROOMS_LIST]
+    fromData.forEach(r => { if (!merged.includes(r)) merged.push(r) })
+    return merged
+  }, [yearRevenue])
+
   // ── Expense matrix (category × month grid) ─────────────────────────────────
   const expenseMatrix = useMemo(() => {
     function buildGroups(type: string) {
@@ -409,7 +419,7 @@ export default function BudgetClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {ROOMS_LIST.map(room => {
+                    {revMatrixRooms.map(room => {
                       const rowTotal = yearRevenue.filter(r => r.room_name === room).reduce((s, r) => s + r.amount_thb, 0)
                       return (
                         <tr key={room} className="hover:bg-slate-50">
