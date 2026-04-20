@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Search, ScanText, X, Loader2, FileText, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, SHAREHOLDERS } from '@/types'
+import { formatDate, EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYERS } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
 import { usePermissions } from '@/context/PermissionsContext'
 import type { Expense } from '@/types'
@@ -34,6 +34,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   const [catFilter, setCatFilter] = useState('')
   const [legalOnly, setLegalOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [sortKey, setSortKey] = useState<'payment_date' | 'category' | 'supplier' | 'amount' | 'document_number'>('payment_date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
@@ -50,10 +51,9 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
   const [attachUploading, setAttachUploading] = useState(false)
   const attachRef = useRef<HTMLInputElement>(null)
 
-  const PAGE_SIZE = 10
+  useEffect(() => { setCurrentPage(1) }, [search, catFilter, legalOnly, pageSize])
 
   const filtered = useMemo(() => {
-    setCurrentPage(1)
     return expenses.filter(e => {
       if (legalOnly && !e.is_legal) return false
       if (catFilter && e.category !== catFilter) return false
@@ -79,9 +79,9 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
     return 0
   }), [filtered, sortKey, sortDir])
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
   const safePage = Math.min(currentPage, totalPages)
-  const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const paginated = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   function toggleSort(key: typeof sortKey) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -95,8 +95,23 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
 
   const total = filtered.reduce((s, e) => s + Math.abs(e.amount ?? 0), 0)
 
+  // Progressive Transaction # ("Expense 001") and Document # ("001") — computed from max existing values
+  function nextProgressiveNumbers() {
+    const txMax = expenses.reduce((max, e) => {
+      const m = /^Expense\s+0*(\d+)$/i.exec(e.transaction_number ?? '')
+      return m ? Math.max(max, parseInt(m[1], 10)) : max
+    }, 0)
+    const docMax = expenses.reduce((max, e) => {
+      const s = (e.document_number ?? '').trim()
+      return /^\d+$/.test(s) ? Math.max(max, parseInt(s, 10)) : max
+    }, 0)
+    const pad = (n: number) => String(n).padStart(3, '0')
+    return { transaction_number: `Expense ${pad(txMax + 1)}`, document_number: pad(docMax + 1) }
+  }
+
   const openNew = () => {
-    setEditing(null); setForm(EMPTY)
+    setEditing(null)
+    setForm({ ...EMPTY, ...nextProgressiveNumbers() })
     setOcrFields(new Set()); setOcrError(null); setPreviewUrl(null); setPreviewName(null); setPreviewIsPdf(false)
     setOpen(true)
   }
@@ -301,9 +316,56 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
           <input type="checkbox" checked={legalOnly} onChange={e => setLegalOnly(e.target.checked)} />
           Legal only
         </label>
+        <select className="input w-auto" value={pageSize} onChange={e => setPageSize(+e.target.value)}>
+          <option value={10}>10 / page</option>
+          <option value={25}>25 / page</option>
+          <option value={50}>50 / page</option>
+          <option value={100}>100 / page</option>
+        </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      {/* Mobile card list */}
+      <div className="sm:hidden space-y-3">
+        {paginated.length === 0 ? (
+          <p className="text-center py-8 text-slate-400 text-sm">No expenses found.</p>
+        ) : paginated.map(e => (
+          <div key={e.id} className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-900 truncate">{e.supplier ?? '—'}</p>
+                <p className="text-xs text-slate-500">
+                  {formatDate(e.payment_date)}
+                  {e.category && <span className="ml-1 text-slate-400">· {e.category}</span>}
+                </p>
+                {e.document_number && <p className="text-xs text-slate-400 font-mono mt-0.5">#{e.document_number}</p>}
+              </div>
+              <p className="text-base font-bold text-red-600 shrink-0">{format(Math.abs(e.amount ?? 0))}</p>
+            </div>
+            {e.description && <p className="text-xs text-slate-500 mb-2 line-clamp-2">{e.description}</p>}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                {e.method && <span className="text-slate-500">{e.method}</span>}
+                {e.paid_by && <span className="text-slate-400">· {e.paid_by}</span>}
+                <span className={`font-medium px-2 py-0.5 rounded-full ${auditColors[e.audit ?? ''] ?? 'bg-slate-100 text-slate-500'}`}>
+                  {e.audit ?? '—'}
+                </span>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {e.file_url && (
+                  <a href={e.file_url} target="_blank" rel="noreferrer" title="View attached document" className="text-slate-400 hover:text-blue-600 p-1">
+                    <Paperclip size={15} />
+                  </a>
+                )}
+                {canEdit   && <button onClick={() => openEdit(e)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>}
+                {canDelete && <button onClick={() => remove(e.id)} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[1100px]">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
@@ -375,7 +437,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-xs text-slate-500">Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, sorted.length)} of {sorted.length}</p>
+          <p className="text-xs text-slate-500">Showing {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, sorted.length)} of {sorted.length}</p>
           <div className="flex items-center gap-1">
             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft size={16} /></button>
             {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => i + 1).map(p => (
@@ -491,7 +553,7 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: E
             <div>
               <label className="label">Paid By</label>
               <select className="input" value={form.paid_by ?? ''} onChange={e => setForm(f => ({ ...f, paid_by: e.target.value }))}>
-                <option value="">—</option>{SHAREHOLDERS.map(s => <option key={s}>{s}</option>)}
+                <option value="">—</option>{PAYERS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>

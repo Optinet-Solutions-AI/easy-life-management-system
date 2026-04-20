@@ -17,6 +17,7 @@ export interface Guest {
   passport_number: string | null
   passport_expiry: string | null
   tm30: boolean
+  show_on_legal?: boolean
   created_at: string
 }
 
@@ -97,6 +98,7 @@ export interface Todo {
   status_notes: string | null
   target_date: string | null
   status: string
+  visible_to_gm?: boolean
   created_at: string
   updated_at: string
 }
@@ -149,6 +151,8 @@ export interface BankBalance {
 }
 
 export const SHAREHOLDERS = ['Lorenzo PAGNAN', 'Stella MAROZZI', 'Bruce MIFSUD', 'Hanna PARSONSON']
+
+export const PAYERS = [...SHAREHOLDERS, 'General Manager']
 
 export const EXPENSE_CATEGORIES = ['Rent', 'Legal', 'Staff', 'Utilities', 'Maintenance', 'Marketing', 'Operations', 'Other']
 

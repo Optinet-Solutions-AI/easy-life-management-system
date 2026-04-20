@@ -140,7 +140,32 @@ export default function RevenueClient({ initialRevenue, guestPayments }: { initi
         />
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      {/* Mobile card list */}
+      <div className="sm:hidden space-y-3">
+        {paginated.length === 0 ? (
+          <p className="text-center py-8 text-slate-400 text-sm">No records found.</p>
+        ) : paginated.map(r => (
+          <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-900 truncate">{r.type}</p>
+                <p className="text-xs text-slate-500">{formatDate(r.date)}{r.supplier ? ` · ${r.supplier}` : ''}</p>
+              </div>
+              <p className="text-base font-bold text-green-600 shrink-0">{format(r.amount_thb)}</p>
+            </div>
+            {r.notes && <p className="text-xs text-slate-500 mt-1">{r.notes}</p>}
+            {(canEdit || canDelete) && (
+              <div className="flex gap-2 justify-end mt-2">
+                {canEdit   && <button onClick={() => openEdit(r)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={15} /></button>}
+                {canDelete && <button onClick={() => remove(r.id)} className="text-slate-400 hover:text-red-600 p-1"><Trash2 size={15} /></button>}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block bg-white rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
             <tr>

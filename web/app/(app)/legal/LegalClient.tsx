@@ -4,7 +4,7 @@ import { useState, useMemo, useRef } from 'react'
 import { CheckCircle2, HelpCircle, XCircle, Download, Printer, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, formatTHB, MONTHS, LEGAL_STATUSES } from '@/types'
-import type { Expense, LegalStatus } from '@/types'
+import type { Expense, LegalStatus, Guest } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
 import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
@@ -24,11 +24,12 @@ interface ReviewForm {
   reviewed_at: string
 }
 
-export default function LegalClient({ initialExpenses }: { initialExpenses: Expense[] }) {
+export default function LegalClient({ initialExpenses, initialGuests = [] }: { initialExpenses: Expense[]; initialGuests?: Guest[] }) {
   const { format } = useCurrency()
   const { can } = usePermissions()
   const canEdit = can('legal', 'edit')
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
+  const [guests] = useState<Guest[]>(initialGuests)
   const [reviewing, setReviewing] = useState<Expense | null>(null)
   const [reviewForm, setReviewForm] = useState<ReviewForm>({ status: 'Accepted', notes: '', reviewed_at: new Date().toISOString().split('T')[0] })
   const [saving, setSaving] = useState(false)
@@ -57,6 +58,17 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
     if (filterMonth !== 'all' && d.getMonth() + 1 !== filterMonth) return false
     return true
   }), [expenses, filterStatus, filterYear, filterMonth])
+
+  // Guests marked show_on_legal — filter by check-in date against year/month selector
+  const filteredGuests = useMemo(() => guests.filter(g => {
+    if (!g.check_in) return false
+    const d = new Date(g.check_in)
+    if (d.getFullYear() !== filterYear) return false
+    if (filterMonth !== 'all' && d.getMonth() + 1 !== filterMonth) return false
+    return true
+  }), [guests, filterYear, filterMonth])
+
+  const revenueTotal = filteredGuests.reduce((s, g) => s + (g.amount_thb_stay ?? 0), 0)
 
   // ── KPI counts ────────────────────────────────────────────────────────────
   const counts = useMemo(() => {
@@ -194,6 +206,61 @@ export default function LegalClient({ initialExpenses }: { initialExpenses: Expe
           ))}
         </div>
       </div>
+
+      {/* ── Revenue (guest bookings marked show_on_legal) ──────────────── */}
+      {filteredGuests.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <FileText size={13} className="text-green-600" />
+              <span className="font-semibold text-slate-800">Revenue (Guest Bookings)</span>
+              <span className="text-xs text-slate-400">({filteredGuests.length})</span>
+            </div>
+            <span className="text-sm font-semibold text-green-700">{format(revenueTotal)}</span>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Check-In</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Check-Out</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Guest</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Room</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Stay Total</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Paid</th>
+                    <th className="px-4 py-2.5 print:hidden" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredGuests.map(g => (
+                    <tr key={g.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(g.check_in)}</td>
+                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(g.check_out)}</td>
+                      <td className="px-4 py-3 font-medium text-slate-900">{g.guest_name}</td>
+                      <td className="px-4 py-3 text-slate-500">#{g.room}</td>
+                      <td className="px-4 py-3 text-right font-semibold">{format(g.amount_thb_stay ?? 0)}</td>
+                      <td className="px-4 py-3 text-right text-green-600">{format(g.payment ?? 0)}</td>
+                      <td className="px-4 py-3 print:hidden">
+                        <a href={`/api/invoice/${g.id}`} target="_blank" rel="noreferrer" title="View invoice" className="text-slate-400 hover:text-green-700 inline-flex items-center">
+                          <FileText size={15} />
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-50 border-t border-slate-200">
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-xs font-semibold text-slate-600">Revenue Subtotal</td>
+                    <td className="px-4 py-2 text-right font-bold text-green-700">{format(revenueTotal)}</td>
+                    <td colSpan={2} />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Print header (hidden on screen) ─────────────────────────────── */}
       <div className="hidden print:block mb-6">

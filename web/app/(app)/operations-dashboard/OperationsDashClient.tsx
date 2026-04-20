@@ -11,10 +11,10 @@ const TM30_URL = 'https://extranet.immigration.go.th/fn24online/fn24/main/home.x
 type Tab = 'today' | 'bookings' | 'revenue' | 'tasks' | 'operations' | 'cash'
 
 interface GuestRow { id: string; room: number; guest_name: string; check_in: string; check_out: string; amount_thb_stay: number | null; payment: number | null; tm30: boolean }
-interface TodoRow { id: string; topic: string; department: string | null; status: string; target_date: string | null; responsible_person: string | null; status_notes: string | null }
+interface TodoRow { id: string; topic: string; department: string | null; status: string; target_date: string | null; responsible_person: string | null; status_notes: string | null; visible_to_gm?: boolean }
 interface RevenueRow { amount_thb: number | null; date: string; type: string | null }
 interface AccountRow { id: string; account_type: string; amount: number; notes: string | null; updated_at: string }
-interface ExpenseRow { amount: number | null; payment_date: string | null; category: string | null; supplier: string | null; document_number?: string | null }
+interface ExpenseRow { amount: number | null; payment_date: string | null; category: string | null; supplier: string | null; document_number?: string | null; file_url?: string | null }
 
 interface FireAlertRow {
   id: string
@@ -58,7 +58,12 @@ const ACCOUNT_STYLE: Record<string, { emoji: string; bg: string }> = {
   'GM Bank': { emoji: '🏧', bg: 'bg-teal-50 border-teal-200' },
 }
 
-export default function OperationsDashClient({ guests, todos, revenues, accountBalances, noInvoiceTotal, expenses, fireAlerts }: Props) {
+export default function OperationsDashClient({ guests, todos: allTodos, revenues, accountBalances, noInvoiceTotal, expenses, fireAlerts }: Props) {
+  // GM dashboard only sees tasks assigned to GM or explicitly shared from a shareholder
+  const todos = useMemo(
+    () => allTodos.filter(t => t.responsible_person === 'General Manager' || t.visible_to_gm === true),
+    [allTodos]
+  )
   const [tab, setTab] = useState<Tab>('today')
   const { format } = useCurrency()
   const TOTAL_ROOMS = useRooms().filter(r => r.active).length || 10
@@ -509,7 +514,7 @@ export default function OperationsDashClient({ guests, todos, revenues, accountB
                         {e.payment_date
                           ? new Date(e.payment_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
                           : 'No date'}
-                        {(!e.document_number || String(e.document_number).trim() === '') &&
+                        {(!e.file_url || String(e.file_url).trim() === '') &&
                           <span className="ml-2 text-amber-600 font-medium">No invoice</span>}
                       </p>
                     </div>

@@ -76,11 +76,11 @@ export default function DashboardClient({ currentGuests, upcomingGuests, todosBy
     async function fetchAccounts() {
       const [accRes, expRes] = await Promise.all([
         supabase.from('account_balances').select('*').order('account_type'),
-        supabase.from('expenses').select('amount, document_number'),
+        supabase.from('expenses').select('amount, file_url'),
       ])
       setAccounts(accRes.data ?? [])
       const noInv = (expRes.data ?? [])
-        .filter(e => !e.document_number || String(e.document_number).trim() === '')
+        .filter(e => !e.file_url || String(e.file_url).trim() === '')
         .reduce((s, e) => s + Math.abs(e.amount ?? 0), 0)
       setNoInvoiceTotal(noInv)
       setLoadingAccounts(false)

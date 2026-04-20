@@ -10,16 +10,16 @@ export default async function OperationsDashboardPage() {
     supabase.from('todos').select('*').order('target_date', { ascending: true }),
     supabase.from('revenue').select('amount_thb, date, type').order('date', { ascending: false }).limit(30),
     supabase.from('account_balances').select('*').order('account_type'),
-    supabase.from('expenses').select('amount, payment_date, category, supplier, document_number').order('payment_date', { ascending: false }).limit(50),
+    supabase.from('expenses').select('amount, payment_date, category, supplier, document_number, file_url').order('payment_date', { ascending: false }).limit(50),
     supabase.from('room_fire_extinguishers')
       .select('id, location, expiry_date, serial_number, rooms(number, name)')
       .lte('expiry_date', alertThreshold)
       .order('expiry_date'),
   ])
 
-  // Calculate no-invoice total from all expenses missing a document_number
+  // No-invoice = expenses with no attachment (file_url missing)
   const noInvoiceTotal = (expRes.data ?? [])
-    .filter(e => !e.document_number || String(e.document_number).trim() === '')
+    .filter(e => !e.file_url || String(e.file_url).trim() === '')
     .reduce((s, e) => s + Math.abs(e.amount ?? 0), 0)
 
   return (

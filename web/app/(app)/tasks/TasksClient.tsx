@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Pencil, Trash2, ChevronDown } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatDate, TODO_STATUSES, DEPARTMENTS, SHAREHOLDERS } from '@/types'
 import type { Todo } from '@/types'
@@ -9,7 +9,9 @@ import PageHeader from '@/components/PageHeader'
 import Modal from '@/components/Modal'
 import { usePermissions } from '@/context/PermissionsContext'
 
-const EMPTY: Partial<Todo> = { project: 'DMS', department: '', topic: '', responsible_person: '', status_notes: '', target_date: '', status: 'Pending' }
+const EMPTY: Partial<Todo> = { project: 'DMS', department: '', topic: '', responsible_person: '', status_notes: '', target_date: '', status: 'Pending', visible_to_gm: false }
+
+const RESPONSIBLE_OPTIONS = [...SHAREHOLDERS, 'General Manager']
 
 const STATUS_STYLES: Record<string, string> = {
   Complete: 'bg-green-100 text-green-700',
@@ -19,7 +21,7 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) {
-  const { can } = usePermissions()
+  const { can, role } = usePermissions()
   const canAdd    = can('tasks', 'add')
   const canEdit   = can('tasks', 'edit')
   const canDelete = can('tasks', 'delete')
@@ -32,11 +34,23 @@ export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) 
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 50
 
-  const filtered = filter === 'all' ? todos : todos.filter(t => t.status === filter)
+  // Role-based visibility: GM sees only GM-assigned or shared tasks; shareholders see shareholder tasks.
+  // Admins / Lawyer / Accountant / Staff see everything.
+  const roleVisible = useMemo(() => {
+    if (role === 'General Manager') {
+      return todos.filter(t => t.responsible_person === 'General Manager' || t.visible_to_gm === true)
+    }
+    if (role === 'Shareholder') {
+      return todos.filter(t => t.responsible_person !== 'General Manager')
+    }
+    return todos
+  }, [todos, role])
+
+  const filtered = filter === 'all' ? roleVisible : roleVisible.filter(t => t.status === filter)
   const visible = filtered.slice(0, page * PAGE_SIZE)
 
   const counts = TODO_STATUSES.reduce((acc, s) => {
-    acc[s] = todos.filter(t => t.status === s).length
+    acc[s] = roleVisible.filter(t => t.status === s).length
     return acc
   }, {} as Record<string, number>)
 
@@ -65,6 +79,14 @@ export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) 
   async function quickStatus(id: string, status: string) {
     const { data } = await supabase.from('todos').update({ status, updated_at: new Date().toISOString() }).eq('id', id).select().single()
     if (data) setTodos(prev => prev.map(t => t.id === id ? data : t))
+  }
+
+  async function toggleGmVisibility(t: Todo) {
+    const next = !t.visible_to_gm
+    const { data } = await supabase.from('todos')
+      .update({ visible_to_gm: next, updated_at: new Date().toISOString() })
+      .eq('id', t.id).select().single()
+    if (data) setTodos(prev => prev.map(x => x.id === t.id ? data : x))
   }
 
   return (
@@ -111,10 +133,26 @@ export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) 
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <div className="flex gap-2">
+                    {canEdit && t.responsible_person && SHAREHOLDERS.includes(t.responsible_person) && (
+                      <button
+                        onClick={() => toggleGmVisibility(t)}
+                        title={t.visible_to_gm ? 'Hide from GM' : 'Make visible to GM'}
+                        className={t.visible_to_gm ? 'text-teal-600 hover:text-teal-700' : 'text-slate-300 hover:text-teal-600'}
+                      >
+                        {t.visible_to_gm ? <Eye size={15} /> : <EyeOff size={15} />}
+                      </button>
+                    )}
                     {canEdit   && <button onClick={() => openEdit(t)} className="text-slate-400 hover:text-blue-600"><Pencil size={15} /></button>}
                     {canDelete && <button onClick={() => remove(t.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>}
                   </div>
-                  {t.responsible_person && <span className="text-xs text-slate-500">{t.responsible_person}</span>}
+                  {t.responsible_person && (
+                    <span className="text-xs text-slate-500">
+                      {t.responsible_person}
+                      {t.visible_to_gm && SHAREHOLDERS.includes(t.responsible_person) && (
+                        <span className="ml-1 text-[10px] text-teal-600 font-medium">· GM visible</span>
+                      )}
+                    </span>
+                  )}
                   {t.target_date && (
                     <span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-slate-500'}`}>
                       {isOverdue ? '⚠ ' : ''}{formatDate(t.target_date)}
@@ -158,7 +196,13 @@ export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) 
               </select>
             </div>
             <div className="sm:col-span-2"><label className="label">Topic / Task</label><input className="input" value={form.topic ?? ''} onChange={e => setForm(f => ({ ...f, topic: e.target.value }))} /></div>
-            <div><label className="label">Responsible Person</label><input className="input" value={form.responsible_person ?? ''} onChange={e => setForm(f => ({ ...f, responsible_person: e.target.value }))} /></div>
+            <div>
+              <label className="label">Responsible Person</label>
+              <input list="responsible-list" className="input" value={form.responsible_person ?? ''} onChange={e => setForm(f => ({ ...f, responsible_person: e.target.value }))} />
+              <datalist id="responsible-list">
+                {RESPONSIBLE_OPTIONS.map(n => <option key={n} value={n} />)}
+              </datalist>
+            </div>
             <div><label className="label">Target Date</label><input type="date" className="input" value={form.target_date ?? ''} onChange={e => setForm(f => ({ ...f, target_date: e.target.value }))} /></div>
             <div><label className="label">Status</label>
               <select className="input" value={form.status ?? 'Pending'} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
@@ -166,6 +210,15 @@ export default function TasksClient({ initialTodos }: { initialTodos: Todo[] }) 
               </select>
             </div>
             <div className="sm:col-span-2"><label className="label">Status Notes</label><textarea className="input" rows={3} value={form.status_notes ?? ''} onChange={e => setForm(f => ({ ...f, status_notes: e.target.value }))} /></div>
+            {form.responsible_person && SHAREHOLDERS.includes(form.responsible_person) && (
+              <div className="sm:col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer bg-teal-50 border border-teal-200 rounded-lg px-3 py-2">
+                  <input type="checkbox" checked={form.visible_to_gm ?? false} onChange={e => setForm(f => ({ ...f, visible_to_gm: e.target.checked }))} className="w-4 h-4 accent-teal-600" />
+                  <span className="text-sm font-medium text-teal-700">Make visible to General Manager</span>
+                  <span className="text-xs text-slate-500">(GM can see but not act)</span>
+                </label>
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-slate-600">Cancel</button>

@@ -15,7 +15,7 @@ const EMPTY: Partial<Guest> = {
   room: 1, check_in: '', check_out: '', guest_name: '', guest_count: 1,
   amount_thb_day: null, amount_thb_stay: null, paid: '', payment: 0,
   invoice: '', notes: '', email: '', phone: '',
-  passport_number: '', passport_expiry: '', tm30: false,
+  passport_number: '', passport_expiry: '', tm30: false, show_on_legal: false,
 }
 
 const PAGE_SIZE = 10
@@ -461,6 +461,17 @@ export default function GuestsClient({ initialGuests }: { initialGuests: Guest[]
                   ? <ShieldCheck size={18} className="ml-auto text-green-600 shrink-0" />
                   : <ShieldAlert size={18} className="ml-auto text-amber-500 shrink-0" />
                 }
+              </div>
+              <div className={`mt-3 flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${form.show_on_legal ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}
+                onClick={() => setForm(f => ({ ...f, show_on_legal: !f.show_on_legal }))}>
+                <input type="checkbox" id="show_on_legal" checked={form.show_on_legal ?? false} readOnly className="w-4 h-4 accent-blue-600" />
+                <div>
+                  <label htmlFor="show_on_legal" className={`text-sm font-semibold cursor-pointer ${form.show_on_legal ? 'text-blue-700' : 'text-slate-600'}`}>
+                    Show on Legal page
+                  </label>
+                  <p className="text-xs text-slate-500">Include this booking (and its invoice) in the Legal / Accounting report</p>
+                </div>
+                <FileText size={18} className={`ml-auto shrink-0 ${form.show_on_legal ? 'text-blue-600' : 'text-slate-400'}`} />
               </div>
             </div>
 
